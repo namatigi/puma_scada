@@ -36,13 +36,12 @@ pub enum Product {
     Jet,
     Gasoil,
     Hfo,
-    BaseOil,
 }
 
 impl Product {
-    const BY_METER: [Product; 5] = [Product::Gasoline, Product::Jet, Product::Gasoil, Product::Hfo, Product::BaseOil];
+    const BY_METER: [Product; 4] = [Product::Gasoline, Product::Jet, Product::Gasoil, Product::Hfo];
 
-    /// Product of meter number `n` (FM_01 → gasoline … FM_04 → HFO, FM_05 → base oil).
+    /// Product of meter number `n` (FM_01 → gasoline … FM_04 → HFO).
     pub fn for_meter(n: u32) -> Product {
         Self::BY_METER[(n.max(1) as usize - 1) % Self::BY_METER.len()]
     }
@@ -55,7 +54,6 @@ impl Product {
             ("jet", Product::Jet),
             ("gasoil", Product::Gasoil),
             ("hfo", Product::Hfo),
-            ("base", Product::BaseOil),
         ]
         .into_iter()
         .find(|(k, _)| n.contains(k))
@@ -69,7 +67,6 @@ impl Product {
             Product::Jet => 800.0,
             Product::Gasoil => 840.0,
             Product::Hfo => 980.0,
-            Product::BaseOil => 870.0,
         }
     }
 
@@ -80,7 +77,6 @@ impl Product {
             Product::Jet => 104.0,
             Product::Gasoil => 110.0,
             Product::Hfo => 72.0,
-            Product::BaseOil => 60.0,
         }
     }
 
@@ -91,7 +87,6 @@ impl Product {
             Product::Jet => 26.0,
             Product::Gasoil => 28.0,
             Product::Hfo => 41.0,
-            Product::BaseOil => 35.0,
         }
     }
 }
@@ -306,7 +301,7 @@ mod tests {
         assert_eq!(Product::for_meter(2), Product::Jet);
         assert_eq!(Product::for_meter(3), Product::Gasoil);
         assert_eq!(Product::for_meter(4), Product::Hfo);
-        assert_eq!(Product::from_name("BaseOil_Meter"), Some(Product::BaseOil));
+        assert_eq!(Product::from_name("HFO_Meter"), Some(Product::Hfo));
     }
 
     #[test]

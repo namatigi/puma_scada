@@ -25,8 +25,3 @@ max_retries = 3
 name = "Flow_Meter_4"
 unit_id = 4
 max_retries = 3
-
-[[station]]
-name = "Flow_Meter_5"
-unit_id = 5
-max_retries = 3

@@ -30,12 +30,6 @@ enabled = true
 database = "petrogas-ioserver"
 max_age_s = 2592000
 
-[[historian]]
-name = "FM05"
-enabled = true
-database = "petrogas-ioserver"
-max_age_s = 2592000
-
 [[logger]]
 name = "FM01"
 enabled = true
@@ -195,43 +189,3 @@ tag = "FM_04_Vol_Inv"
 [[logger.column]]
 name = "FM_04_Volume_Rate"
 tag = "FM_04_Volume_Rate"
-
-[[logger]]
-name = "FM05"
-enabled = true
-database = "petrogas-ioserver"
-table = "FM05"
-record = "on-change"
-max_age_s = 2592000
-
-[[logger.column]]
-name = "FM_05_Density"
-tag = "FM_05_Density"
-
-[[logger.column]]
-name = "FM_05_Mass_Inv"
-tag = "FM_05_Mass_Inv"
-
-[[logger.column]]
-name = "FM_05_Mass_Total"
-tag = "FM_05_Mass_Total"
-
-[[logger.column]]
-name = "FM_05_MassFlow"
-tag = "FM_05_MassFlow"
-
-[[logger.column]]
-name = "FM_05_Temp"
-tag = "FM_05_Temp"
-
-[[logger.column]]
-name = "FM_05_Vol"
-tag = "FM_05_Vol"
-
-[[logger.column]]
-name = "FM_05_Vol_Inv"
-tag = "FM_05_Vol_Inv"
-
-[[logger.column]]
-name = "FM_05_Volume_Rate"
-tag = "FM_05_Volume_Rate"

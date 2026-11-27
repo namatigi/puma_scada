@@ -948,21 +948,11 @@ w = 104.0
 h = 125.0
 
 [[element]]
-id = "Pipeline15"
-kind = "symbol"
-symbol = "movicon:Symbol732"
-x = 951.0
-y = 709.0
-w = 146.0
-h = 33.0
-
-[[element]]
 id = "EditDisplay"
 kind = "display"
 tag = "FM_05_MassFlow"
 unit = "mTon/hr"
 format = "#0.0"
-editable = false
 x = 1491.0
 y = 909.0
 w = 140.0

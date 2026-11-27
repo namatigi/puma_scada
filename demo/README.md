@@ -79,23 +79,16 @@ Alarms stay in the list until acknowledged (ISA-18.2), so after a few minutes
 the alarm page shows a mix of active, acknowledged and cleared-unacknowledged
 alarms.
 
-### 3. Base Oil meter (FM_05) and the Manifold pieces from Movicon's thumbnail
+### 3. Base Oil removed
 
-Movicon's `Manifold.png` thumbnail (April 2024) shows a Base Oil pipe run, a
-riser on the far right and a "BaseOil Trend & Log" button. None of these is in
-the saved screen that Movicon's runtime loads, and the project has no Base Oil
-meter: the `FM_05` panel has no tag bindings and there is no FM05 trend. The
-demo recreates them from the thumbnail:
+OXOAFRICA SCADA does not handle Base Oil. The imported Manifold screen has a
+Base Oil meter, its two valves, a "Base Oil" label and an (unbound) display, and
+the project has an empty `FM_05` panel for it. The demo removes them:
 
 | File | Change |
 |---|---|
-| `drivers/flow-meters.toml` | station `Flow_Meter_5`, unit id 5 (**invented**: the real gateway's Base Oil meter address is unknown) |
-| `tags.toml` | 12 `FM_05_…` tags, the same registers as FM_04 on station 5 |
-| `data.toml` | historian and data logger `FM05`, like FM04 |
-| `screens/FM_05.toml` | displays bound to the tag their label names (read-only values not editable); Reset Totalizer pulses `FM_05_Reset_Total` |
-| `screens/FM05_Trend.toml` | new, a copy of `FM04_Trend` for the FM05 historian |
-| `screens/Manifold.toml` | pipeline `BaseOilRun` (bottom run, riser, top-right leg), a valve and fitting on the new riser, button `BaseOilTrendButton` → `FM05_Trend`; the Base Oil meter, valves, label and display moved onto the new run as in the thumbnail; the Base Oil display shows `FM_05_MassFlow` |
+| `screens/Manifold.toml` | elements `ContentControl51` (meter), `ContentControl` and `ContentControl2` (valves), `ButtonControl4` (label, opened `FM_05`) and `EditDisplay` (display) removed |
+| `screens/FM_05.toml` | removed |
 
-The simulator treats meter 5 as base oil (ρ15 870 kg/m³). Before connecting to
-the real plant, replace station 5 with the Base Oil meter's real address, or
-remove these additions. No alarms are defined for FM_05.
+The simulator, symbol map and studio Symbol Library know four products:
+Gasoline, JET A-1, Gasoil and HFO.

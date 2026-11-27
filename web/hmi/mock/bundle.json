@@ -987,7 +987,264 @@
       }
     ]
   },
-  "alarms": [],
+  "alarms": [
+    {
+      "name": "FM01_HighFlow",
+      "tag": "FM_01_MassFlow",
+      "when": "above",
+      "limit": 113.0,
+      "severity": "high",
+      "message": "Gasoline (FM_01) mass flow above 113 mTon/hr",
+      "area": "Manifold",
+      "deadband": 2.0,
+      "delay_s": 3.0
+    },
+    {
+      "name": "FM01_LowFlow",
+      "tag": "FM_01_MassFlow",
+      "when": "below",
+      "limit": 10.0,
+      "severity": "medium",
+      "message": "Gasoline (FM_01) mass flow below 10 mTon/hr (loading stopped)",
+      "area": "Manifold",
+      "deadband": 5.0,
+      "delay_s": 10.0
+    },
+    {
+      "name": "FM01_DensityHigh",
+      "tag": "FM_01_Density",
+      "when": "above",
+      "limit": 721.2,
+      "severity": "medium",
+      "message": "Gasoline (FM_01) density above 721.2 kg/m³ (off-spec)",
+      "area": "Manifold",
+      "deadband": 0.3,
+      "delay_s": 5.0
+    },
+    {
+      "name": "FM01_DensityLow",
+      "tag": "FM_01_Density",
+      "when": "below",
+      "limit": 718.8,
+      "severity": "medium",
+      "message": "Gasoline (FM_01) density below 718.8 kg/m³ (off-spec)",
+      "area": "Manifold",
+      "deadband": 0.3,
+      "delay_s": 5.0
+    },
+    {
+      "name": "FM01_CommLoss",
+      "tag": "FM_01_MassFlow",
+      "when": "bad-quality",
+      "severity": "critical",
+      "message": "Gasoline (FM_01) flow meter not answering (bad quality)",
+      "area": "Manifold",
+      "delay_s": 2.0
+    },
+    {
+      "name": "FM01_PressureHigh",
+      "tag": "FM_01_External_Pressure",
+      "when": "above",
+      "limit": 6.15,
+      "severity": "high",
+      "message": "Gasoline (FM_01) external pressure above 6.15 bar",
+      "area": "Manifold",
+      "deadband": 0.2,
+      "delay_s": 3.0
+    },
+    {
+      "name": "FM02_HighFlow",
+      "tag": "FM_02_MassFlow",
+      "when": "above",
+      "limit": 100.0,
+      "severity": "high",
+      "message": "JET A-1 (FM_02) mass flow above 100 mTon/hr",
+      "area": "Manifold",
+      "deadband": 2.0,
+      "delay_s": 3.0
+    },
+    {
+      "name": "FM02_LowFlow",
+      "tag": "FM_02_MassFlow",
+      "when": "below",
+      "limit": 10.0,
+      "severity": "medium",
+      "message": "JET A-1 (FM_02) mass flow below 10 mTon/hr (loading stopped)",
+      "area": "Manifold",
+      "deadband": 5.0,
+      "delay_s": 10.0
+    },
+    {
+      "name": "FM02_DensityHigh",
+      "tag": "FM_02_Density",
+      "when": "above",
+      "limit": 801.2,
+      "severity": "medium",
+      "message": "JET A-1 (FM_02) density above 801.2 kg/m³ (off-spec)",
+      "area": "Manifold",
+      "deadband": 0.3,
+      "delay_s": 5.0
+    },
+    {
+      "name": "FM02_DensityLow",
+      "tag": "FM_02_Density",
+      "when": "below",
+      "limit": 798.8,
+      "severity": "medium",
+      "message": "JET A-1 (FM_02) density below 798.8 kg/m³ (off-spec)",
+      "area": "Manifold",
+      "deadband": 0.3,
+      "delay_s": 5.0
+    },
+    {
+      "name": "FM02_CommLoss",
+      "tag": "FM_02_MassFlow",
+      "when": "bad-quality",
+      "severity": "critical",
+      "message": "JET A-1 (FM_02) flow meter not answering (bad quality)",
+      "area": "Manifold",
+      "delay_s": 2.0
+    },
+    {
+      "name": "FM02_PressureHigh",
+      "tag": "FM_02_External_Pressure",
+      "when": "above",
+      "limit": 5.7,
+      "severity": "high",
+      "message": "JET A-1 (FM_02) external pressure above 5.7 bar",
+      "area": "Manifold",
+      "deadband": 0.2,
+      "delay_s": 3.0
+    },
+    {
+      "name": "FM03_HighFlow",
+      "tag": "FM_03_MassFlow",
+      "when": "above",
+      "limit": 105.5,
+      "severity": "high",
+      "message": "Gasoil (FM_03) mass flow above 105.5 mTon/hr",
+      "area": "Manifold",
+      "deadband": 2.0,
+      "delay_s": 3.0
+    },
+    {
+      "name": "FM03_LowFlow",
+      "tag": "FM_03_MassFlow",
+      "when": "below",
+      "limit": 10.0,
+      "severity": "medium",
+      "message": "Gasoil (FM_03) mass flow below 10 mTon/hr (loading stopped)",
+      "area": "Manifold",
+      "deadband": 5.0,
+      "delay_s": 10.0
+    },
+    {
+      "name": "FM03_DensityHigh",
+      "tag": "FM_03_Density",
+      "when": "above",
+      "limit": 841.2,
+      "severity": "medium",
+      "message": "Gasoil (FM_03) density above 841.2 kg/m³ (off-spec)",
+      "area": "Manifold",
+      "deadband": 0.3,
+      "delay_s": 5.0
+    },
+    {
+      "name": "FM03_DensityLow",
+      "tag": "FM_03_Density",
+      "when": "below",
+      "limit": 838.8,
+      "severity": "medium",
+      "message": "Gasoil (FM_03) density below 838.8 kg/m³ (off-spec)",
+      "area": "Manifold",
+      "deadband": 0.3,
+      "delay_s": 5.0
+    },
+    {
+      "name": "FM03_CommLoss",
+      "tag": "FM_03_MassFlow",
+      "when": "bad-quality",
+      "severity": "critical",
+      "message": "Gasoil (FM_03) flow meter not answering (bad quality)",
+      "area": "Manifold",
+      "delay_s": 2.0
+    },
+    {
+      "name": "FM03_PressureHigh",
+      "tag": "FM_03_External_Pressure",
+      "when": "above",
+      "limit": 5.9,
+      "severity": "high",
+      "message": "Gasoil (FM_03) external pressure above 5.9 bar",
+      "area": "Manifold",
+      "deadband": 0.2,
+      "delay_s": 3.0
+    },
+    {
+      "name": "FM04_HighFlow",
+      "tag": "FM_04_MassFlow",
+      "when": "above",
+      "limit": 69.0,
+      "severity": "high",
+      "message": "HFO (FM_04) mass flow above 69 mTon/hr",
+      "area": "Manifold",
+      "deadband": 2.0,
+      "delay_s": 3.0
+    },
+    {
+      "name": "FM04_LowFlow",
+      "tag": "FM_04_MassFlow",
+      "when": "below",
+      "limit": 10.0,
+      "severity": "medium",
+      "message": "HFO (FM_04) mass flow below 10 mTon/hr (loading stopped)",
+      "area": "Manifold",
+      "deadband": 5.0,
+      "delay_s": 10.0
+    },
+    {
+      "name": "FM04_DensityHigh",
+      "tag": "FM_04_Density",
+      "when": "above",
+      "limit": 981.2,
+      "severity": "medium",
+      "message": "HFO (FM_04) density above 981.2 kg/m³ (off-spec)",
+      "area": "Manifold",
+      "deadband": 0.3,
+      "delay_s": 5.0
+    },
+    {
+      "name": "FM04_DensityLow",
+      "tag": "FM_04_Density",
+      "when": "below",
+      "limit": 978.8,
+      "severity": "medium",
+      "message": "HFO (FM_04) density below 978.8 kg/m³ (off-spec)",
+      "area": "Manifold",
+      "deadband": 0.3,
+      "delay_s": 5.0
+    },
+    {
+      "name": "FM04_CommLoss",
+      "tag": "FM_04_MassFlow",
+      "when": "bad-quality",
+      "severity": "critical",
+      "message": "HFO (FM_04) flow meter not answering (bad quality)",
+      "area": "Manifold",
+      "delay_s": 2.0
+    },
+    {
+      "name": "FM04_PressureHigh",
+      "tag": "FM_04_External_Pressure",
+      "when": "above",
+      "limit": 4.7,
+      "severity": "high",
+      "message": "HFO (FM_04) external pressure above 4.7 bar",
+      "area": "Manifold",
+      "deadband": 0.2,
+      "delay_s": 3.0
+    }
+  ],
   "screens": [
     {
       "name": "FM01_Trend",
@@ -1385,7 +1642,7 @@
                 "FM_01_Mass_Inv",
                 "FM_01_Mass_Total",
                 "FM_01_MassFlow",
-                "FM_01_Press",
+                "FM_01_External_Pressure",
                 "FM_01_Temp",
                 "FM_01_Vol",
                 "FM_01_Volume_Rate"
@@ -2267,232 +2524,6 @@
           "y": 557.0,
           "w": 122.0,
           "h": 30.0
-        }
-      ]
-    },
-    {
-      "name": "FM_05",
-      "width": 320.0,
-      "height": 680.0,
-      "background": "#595959",
-      "legacy_id": "3feaecc0-9d82-4bd2-954e-20cc0f89b55c",
-      "element": [
-        {
-          "id": "TextBox",
-          "kind": "label",
-          "text": "Base Oil",
-          "x": 85.0,
-          "y": 8.0,
-          "w": 122.0,
-          "h": 39.0
-        },
-        {
-          "id": "TextBox1",
-          "kind": "label",
-          "text": "Density",
-          "x": 23.0,
-          "y": 60.0,
-          "w": 100.0,
-          "h": 30.0
-        },
-        {
-          "id": "TextBox2",
-          "kind": "label",
-          "text": "Temperature",
-          "x": 20.0,
-          "y": 112.0,
-          "w": 100.0,
-          "h": 30.0
-        },
-        {
-          "id": "TextBox3",
-          "kind": "label",
-          "text": "Mass Flow Rate",
-          "x": 18.0,
-          "y": 168.0,
-          "w": 100.0,
-          "h": 30.0
-        },
-        {
-          "id": "TextBox4",
-          "kind": "label",
-          "text": "Volume Flow Rate",
-          "x": 18.0,
-          "y": 229.0,
-          "w": 100.0,
-          "h": 30.0
-        },
-        {
-          "id": "TextBox5",
-          "kind": "label",
-          "text": "Volume Total",
-          "x": 12.0,
-          "y": 335.0,
-          "w": 100.0,
-          "h": 30.0
-        },
-        {
-          "id": "TextBox6",
-          "kind": "label",
-          "text": "Mass Total",
-          "x": 18.0,
-          "y": 284.0,
-          "w": 100.0,
-          "h": 30.0
-        },
-        {
-          "id": "TextBox7",
-          "kind": "label",
-          "text": "Mass Total Inventory",
-          "x": 12.0,
-          "y": 390.0,
-          "w": 124.0,
-          "h": 30.0
-        },
-        {
-          "id": "TextBox8",
-          "kind": "label",
-          "text": "Volume Total Inventory",
-          "x": 8.0,
-          "y": 443.0,
-          "w": 133.0,
-          "h": 30.0
-        },
-        {
-          "id": "TextBox9",
-          "kind": "label",
-          "text": "External Temperature",
-          "x": 8.0,
-          "y": 499.0,
-          "w": 129.0,
-          "h": 30.0
-        },
-        {
-          "id": "TextBox10",
-          "kind": "label",
-          "text": "External Pressure",
-          "x": 10.0,
-          "y": 560.0,
-          "w": 100.0,
-          "h": 30.0
-        },
-        {
-          "id": "EditDisplay",
-          "kind": "display",
-          "format": "#0.000000",
-          "editable": true,
-          "x": 140.0,
-          "y": 52.0,
-          "w": 175.0,
-          "h": 50.0
-        },
-        {
-          "id": "EditDisplay2",
-          "kind": "display",
-          "format": "#0.000000",
-          "editable": true,
-          "x": 140.0,
-          "y": 107.0,
-          "w": 175.0,
-          "h": 50.0
-        },
-        {
-          "id": "EditDisplay3",
-          "kind": "display",
-          "format": "#0.000000",
-          "editable": true,
-          "x": 140.0,
-          "y": 162.0,
-          "w": 175.0,
-          "h": 50.0
-        },
-        {
-          "id": "EditDisplay4",
-          "kind": "display",
-          "format": "#0.000000",
-          "editable": true,
-          "x": 140.0,
-          "y": 217.0,
-          "w": 175.0,
-          "h": 50.0
-        },
-        {
-          "id": "EditDisplay5",
-          "kind": "display",
-          "format": "#0.000000",
-          "editable": true,
-          "x": 140.0,
-          "y": 272.0,
-          "w": 175.0,
-          "h": 50.0
-        },
-        {
-          "id": "EditDisplay6",
-          "kind": "display",
-          "format": "#0.000000",
-          "editable": true,
-          "x": 140.0,
-          "y": 327.0,
-          "w": 175.0,
-          "h": 50.0
-        },
-        {
-          "id": "EditDisplay7",
-          "kind": "display",
-          "format": "#0.000000",
-          "editable": true,
-          "x": 140.0,
-          "y": 382.0,
-          "w": 175.0,
-          "h": 50.0
-        },
-        {
-          "id": "EditDisplay8",
-          "kind": "display",
-          "format": "#0.000000",
-          "editable": true,
-          "x": 140.0,
-          "y": 437.0,
-          "w": 175.0,
-          "h": 50.0
-        },
-        {
-          "id": "EditDisplay9",
-          "kind": "display",
-          "format": "#0.000000",
-          "editable": true,
-          "x": 140.0,
-          "y": 492.0,
-          "w": 175.0,
-          "h": 50.0
-        },
-        {
-          "id": "EditDisplay10",
-          "kind": "display",
-          "format": "#0.000000",
-          "editable": true,
-          "x": 140.0,
-          "y": 547.0,
-          "w": 175.0,
-          "h": 50.0
-        },
-        {
-          "id": "ContentControl",
-          "kind": "button",
-          "text": "Report",
-          "x": 26.0,
-          "y": 622.0,
-          "w": 82.0,
-          "h": 42.0
-        },
-        {
-          "id": "ContentControl1",
-          "kind": "button",
-          "text": "Reset Totalizer",
-          "x": 185.0,
-          "y": 622.0,
-          "w": 120.0,
-          "h": 43.0
         }
       ]
     },
@@ -3844,33 +3875,6 @@
           "rotation": 90.0
         },
         {
-          "id": "ContentControl",
-          "kind": "symbol",
-          "symbol": "movicon:Symbol952",
-          "x": 1146.0,
-          "y": 987.0,
-          "w": 90.0,
-          "h": 60.0
-        },
-        {
-          "id": "ContentControl2",
-          "kind": "symbol",
-          "symbol": "movicon:Symbol952",
-          "x": 1430.0,
-          "y": 987.0,
-          "w": 90.0,
-          "h": 60.0
-        },
-        {
-          "id": "ContentControl51",
-          "kind": "symbol",
-          "symbol": "movicon:Symbol408",
-          "x": 1284.0,
-          "y": 922.0,
-          "w": 104.0,
-          "h": 125.0
-        },
-        {
           "id": "Pipeline15",
           "kind": "symbol",
           "symbol": "movicon:Symbol732",
@@ -3878,32 +3882,6 @@
           "y": 709.0,
           "w": 146.0,
           "h": 33.0
-        },
-        {
-          "id": "EditDisplay",
-          "kind": "display",
-          "unit": "mTon/hr",
-          "format": "#0.0",
-          "editable": true,
-          "x": 1430.0,
-          "y": 920.0,
-          "w": 140.0,
-          "h": 50.0
-        },
-        {
-          "id": "ButtonControl4",
-          "kind": "button",
-          "text": "Base Oil",
-          "x": 1157.0,
-          "y": 920.0,
-          "w": 93.0,
-          "h": 36.0,
-          "on_click": [
-            {
-              "action": "open-screen",
-              "screen": "FM_05"
-            }
-          ]
         }
       ]
     }

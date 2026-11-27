@@ -59,7 +59,7 @@ Product name: **Moviclone**.
 - Hand valves: metallic ball-valve bodies with blue butterfly handles, rotated
   per element `rotation`.
 - Flow meters: Coriolis-style body coloured per product (Gasoline red `#FF4D4D`,
-  Jet A-1 white, Gasoil grey `#555`, HFO black, Base Oil pink `#F08080`) with a white
+  Jet A-1 white, Gasoil grey `#555`, HFO black) with a white
   transmitter head on top.
 - Value displays: dark panel (`#333333`), white SemiBold value (Segoe UI 20 px),
   unit to the right (14 px). **Bad quality: red border + warning triangle**;

@@ -200,11 +200,8 @@ symbol library through `web/shared/symbol-map.json`), trend controls.
   routes for them yet); fonts, visibility and user access are not in the model;
   report layouts cannot be edited; undo of a rename spanning documents takes one
   step per document.
-- **HMI / imported screens**: Movicon's `Manifold.png` thumbnail (April 2024)
-  shows a Base Oil pipe run, a right riser and a "BaseOil Trend & Log" button that
-  are not in the saved screen, which is what Movicon's runtime loads; there is no
-  Base Oil trend screen and the Base Oil display has no tag. The demo recreates
-  them with an invented Base Oil meter on station 5 (see `demo/README.md`, change 3).
+- **HMI / imported screens**: the demo has no Base Oil (removed from the imported
+  Manifold screen, see `demo/README.md`, change 3).
   Some imported displays are bound to other meters' tags as in the source project
   (e.g. the HFO display next to FM_04 shows `FM_01_Volume_Rate`, panel `FM_01`
   is titled "HFO"); `movicon:Symbol732` is a best-guess pipe.

@@ -42,7 +42,6 @@
     "Manifold/ContentControl33": { "params": { "product": "#FF4D4D" }, "label": "Gasoline" },
     "Manifold/ContentControl17": { "params": { "product": "#F4F4F4" }, "label": "JET A-1" },
     "Manifold/ContentControl21": { "params": { "product": "#555555" }, "label": "Gasoil" },
-    "Manifold/ContentControl24": { "params": { "product": "#151515" }, "label": "HFO" },
-    "Manifold/ContentControl51": { "params": { "product": "#F08080" }, "label": "Base Oil" }
+    "Manifold/ContentControl24": { "params": { "product": "#151515" }, "label": "HFO" }
   }
 }

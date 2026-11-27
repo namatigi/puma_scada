@@ -94,7 +94,7 @@ export function createSymbolLibrary(root, { onAdd, symbolMap }) {
       byCat.get(sym.category).push(tile);
     }
     // Product-coloured meters as ready-made variants (Petrogas products).
-    const products = [['Gasoline', '#FF4D4D'], ['Jet A-1', '#FFFFFF'], ['Gasoil', '#555555'], ['HFO', '#111111'], ['Base Oil', '#F08080']];
+    const products = [['Gasoline', '#FF4D4D'], ['Jet A-1', '#FFFFFF'], ['Gasoil', '#555555'], ['HFO', '#111111']];
     const variants = products
       .filter(([n]) => !q || n.toLowerCase().includes(q) || 'coriolis meter'.includes(q))
       .map(([n, c]) => {

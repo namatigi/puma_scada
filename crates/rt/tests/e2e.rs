@@ -230,7 +230,7 @@ async fn serves_the_bundle_live_values_and_writes_coils() {
 
     let bundle = get(addr, "/api/bundle").await;
     assert_eq!(bundle["meta"]["name"], "OXOAFRICA SCADA");
-    assert_eq!(bundle["tags"].as_array().unwrap().len(), 61);
+    assert_eq!(bundle["tags"].as_array().unwrap().len(), 49);
     assert!(bundle["alarms"].as_array().unwrap().len() > 20);
     assert_eq!(http(addr, "GET", "/hmi/", None).await.status, 200);
     assert_eq!(http(addr, "GET", "/studio/", None).await.status, 200);

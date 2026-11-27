@@ -183,9 +183,9 @@ await checkAsync('symbol-map.json maps every Petrogas symbol to a library symbol
 });
 await checkAsync('meter product colours per instance', async () => {
   const map = await loadSymbolMap();
-  const colours = Object.fromEntries(['ContentControl33', 'ContentControl17', 'ContentControl21', 'ContentControl24', 'ContentControl51']
+  const colours = Object.fromEntries(['ContentControl33', 'ContentControl17', 'ContentControl21', 'ContentControl24']
     .map((id) => [resolveSymbol('movicon:Symbol408', map, { screen: 'Manifold', id }).label, resolveSymbol('movicon:Symbol408', map, { screen: 'Manifold', id }).params.product]));
-  eq(colours, { Gasoline: '#FF4D4D', 'JET A-1': '#F4F4F4', Gasoil: '#555555', HFO: '#151515', 'Base Oil': '#F08080' });
+  eq(colours, { Gasoline: '#FF4D4D', 'JET A-1': '#F4F4F4', Gasoil: '#555555', HFO: '#151515' });
   eq(resolveSymbol('movicon:Symbol408', map, { screen: 'Manifold', id: 'ContentControl24' }).params.head, '#FFFFFF');
 });
 check('inline params override the map', () => {
@@ -194,7 +194,7 @@ check('inline params override the map', () => {
   eq(resolveSymbol('movicon:Unknown', map).source, 'unmapped');
   eq(resolveSymbol('movicon:Unknown', map).known, false);
 });
-await checkAsync('every symbol in the Petrogas bundle resolves', async () => {
+await checkAsync('every symbol in the demo bundle resolves', async () => {
   const [map, bundle] = await Promise.all([loadSymbolMap(), fetch('../hmi/mock/bundle.json').then((r) => r.json())]);
   const counts = {};
   for (const sc of bundle.screens) {
@@ -205,8 +205,8 @@ await checkAsync('every symbol in the Petrogas bundle resolves', async () => {
       counts[el.symbol] = (counts[el.symbol] ?? 0) + 1;
     }
   }
-  eq(counts['movicon:Symbol952'], 19, 'Symbol952 count: ');
-  eq(counts['movicon:Symbol408'], 5, 'Symbol408 count: ');
+  eq(counts['movicon:Symbol952'], 17, 'Symbol952 count: ');
+  eq(counts['movicon:Symbol408'], 4, 'Symbol408 count: ');
 });
 
 // ---------------------------------------------------------------- helpers
