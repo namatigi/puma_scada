@@ -88,10 +88,19 @@ impl Rig {
 
 struct Reply {
     status: u16,
+    head: String,
     body: String,
 }
 
 impl Reply {
+    /// The `name=value` of the reply's Set-Cookie header.
+    fn cookie(&self) -> Option<String> {
+        self.head
+            .lines()
+            .find_map(|l| l.split_once(':').filter(|(k, _)| k.eq_ignore_ascii_case("set-cookie")).map(|(_, v)| v.trim().to_string()))
+            .and_then(|v| v.split(';').next().map(str::to_string))
+    }
+
     fn json(&self) -> Json {
         serde_json::from_str(&self.body).unwrap_or_else(|e| panic!("not JSON ({e}): {}", self.body))
     }
@@ -99,10 +108,16 @@ impl Reply {
 
 /// Minimal HTTP/1.1 client (no extra dependencies), with chunked decoding.
 async fn http(addr: SocketAddr, method: &str, path: &str, body: Option<&Json>) -> Reply {
+    http_as(addr, None, method, path, body).await
+}
+
+/// `http` with a session cookie (studio routes).
+async fn http_as(addr: SocketAddr, cookie: Option<&str>, method: &str, path: &str, body: Option<&Json>) -> Reply {
     let body = body.map(|b| b.to_string()).unwrap_or_default();
     let mut sock = tokio::net::TcpStream::connect(addr).await.unwrap();
+    let cookie = cookie.map(|c| format!("Cookie: {c}\r\n")).unwrap_or_default();
     let req = format!(
-        "{method} {path} HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\nContent-Type: application/json\r\nContent-Length: {}\r\n\r\n{body}",
+        "{method} {path} HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n{cookie}Content-Type: application/json\r\nContent-Length: {}\r\n\r\n{body}",
         body.len()
     );
     sock.write_all(req.as_bytes()).await.unwrap();
@@ -112,7 +127,7 @@ async fn http(addr: SocketAddr, method: &str, path: &str, body: Option<&Json>) -
     let (head, raw) = text.split_once("\r\n\r\n").unwrap_or((&text, ""));
     let status = head.split_whitespace().nth(1).and_then(|s| s.parse().ok()).unwrap_or(0);
     let body = if head.to_ascii_lowercase().contains("transfer-encoding: chunked") { dechunk(raw) } else { raw.to_string() };
-    Reply { status, body }
+    Reply { status, head: head.to_string(), body }
 }
 
 fn dechunk(mut raw: &str) -> String {
@@ -346,11 +361,20 @@ async fn studio_saves_reload_the_running_project() {
     let mut ws = connect(addr).await;
     wait_good(&mut ws, &["FM_01_MassFlow"]).await;
 
+    // The studio needs a signed-in user. With no users yet, the first
+    // administrator can be created from this machine (the test connects over loopback).
+    assert_eq!(http(addr, "GET", "/api/studio/project", None).await.status, 401);
+    let r = http(addr, "POST", "/api/studio/setup", Some(&json!({ "name": "admin", "password": "e2e-admin-pass" }))).await;
+    assert_eq!(r.status, 200, "{}", r.body);
+    let cookie = r.cookie().expect("session cookie");
+    let me = Some(cookie.as_str());
+    assert!(rig.dir.path().join("data/users.toml").exists());
+
     // 1. A screen edit: the project is swapped, the socket stays open.
-    let studio = get(addr, "/api/studio/project").await;
+    let studio = http_as(addr, me, "GET", "/api/studio/project", None).await.json();
     let mut screen = studio["project"]["screens"].as_array().unwrap().iter().find(|s| s["name"] == "Manifold").unwrap().clone();
     screen["background"] = json!("#204060");
-    let r = http(addr, "PUT", "/api/studio/screens/Manifold", Some(&screen)).await;
+    let r = http_as(addr, me, "PUT", "/api/studio/screens/Manifold", Some(&screen)).await;
     assert_eq!(r.status, 200, "{}", r.body);
     assert_eq!(r.json()["ok"], true);
     recv_until(&mut ws, 10, "reload after the screen save", |m| m["type"] == "reload").await;
@@ -364,7 +388,7 @@ async fn studio_saves_reload_the_running_project() {
     // 2. An alarm edit: historian and alarm engine restart, drivers keep running.
     let mut alarms = studio["project"]["alarms"].as_array().unwrap().clone();
     alarms.retain(|a| a["name"] != "FM01_HighFlow");
-    let r = http(addr, "PUT", "/api/studio/alarms", Some(&Json::Array(alarms))).await;
+    let r = http_as(addr, me, "PUT", "/api/studio/alarms", Some(&Json::Array(alarms))).await;
     assert_eq!(r.status, 200, "{}", r.body);
     recv_until(&mut ws, 10, "reload after the alarm save", |m| m["type"] == "reload").await;
     eventually(30, "the new alarm list", || async move {
@@ -377,7 +401,7 @@ async fn studio_saves_reload_the_running_project() {
     // 3. A tag edit: new tag store and drivers; the old socket is closed after the reload.
     let mut tags = studio["project"]["tags"].as_array().unwrap().clone();
     tags[0]["description"] = json!("edited by the e2e test");
-    let r = http(addr, "PUT", "/api/studio/tags", Some(&Json::Array(tags))).await;
+    let r = http_as(addr, me, "PUT", "/api/studio/tags", Some(&Json::Array(tags))).await;
     assert_eq!(r.status, 200, "{}", r.body);
     recv_until(&mut ws, 15, "reload after the tag save", |m| m["type"] == "reload").await;
     let closed = tokio::time::timeout(Duration::from_secs(15), async {
@@ -396,7 +420,7 @@ async fn studio_saves_reload_the_running_project() {
     // 4. A save that breaks the project is not applied.
     let mut broken = screen.clone();
     broken["element"] = json!([{"id": "X", "kind": "display", "tag": "No_Such_Tag", "x": 0.0, "y": 0.0, "w": 10.0, "h": 10.0}]);
-    let r = http(addr, "PUT", "/api/studio/screens/Manifold", Some(&broken)).await;
+    let r = http_as(addr, me, "PUT", "/api/studio/screens/Manifold", Some(&broken)).await;
     assert_eq!(r.status, 200, "{}", r.body);
     tokio::time::sleep(Duration::from_secs(2)).await;
     let bundle = get(addr, "/api/bundle").await;

@@ -64,7 +64,14 @@ pub async fn start(args: Args) -> anyhow::Result<Runtime> {
     }
 
     let (studio_tx, studio_rx) = watch::channel(0u64);
-    let studio = args.studio.then(|| moviclone_studio::routes(args.project.clone(), studio_tx));
+    let studio = match args.studio {
+        true => {
+            let users = moviclone_studio::users::users_file(&data_dir);
+            let auth = moviclone_studio::Auth::open(users).map_err(anyhow::Error::msg).context("studio users")?;
+            Some(moviclone_studio::routes(args.project.clone(), auth, studio_tx))
+        }
+        false => None,
+    };
     let fixed = Arc::new(Fixed {
         data_dir,
         project: SharedProject::new(project.clone()),

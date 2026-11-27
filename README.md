@@ -18,8 +18,12 @@ Background and design: [docs/movicon-next-architecture.html](docs/movicon-next-a
 This builds the release binaries, checks `demo/oxoafrica` with `movi build`, and
 runs it with the Modbus simulator and the studio API:
 
-- HMI: http://127.0.0.1:8080/hmi/ (Manifold, FM_01…FM_05 panels, trend screens, alarms)
-- Studio: http://127.0.0.1:8080/studio/ (edit, Ctrl+S, the running HMI reloads)
+- HMI: http://127.0.0.1:8080/hmi/ (Manifold, FM_01…FM_04 panels, trend screens, alarms)
+- Studio: http://127.0.0.1:8080/studio/ (sign in, edit, Ctrl+S, the running HMI reloads)
+
+The studio asks you to sign in. On the first visit there are no users yet: open
+it on the machine the runtime runs on and create the administrator there (see
+*Studio users*).
 
 Options: `-Listen 0.0.0.0:8080` for tablets on the LAN, `-NoBuild`, `-Fresh`
 (empty history and alarm journal). What the demo changes compared with the
@@ -130,6 +134,46 @@ Passwords can't be stored in these files: `password` only accepts a
 `secret://name` reference (resolved from `MOVICLONE_SECRET_<NAME>`), and anything
 else fails to load.
 
+## Studio users
+
+The studio needs a signed-in user. Each user has a role:
+
+| Role | May |
+|---|---|
+| `viewer` | open the project and look (live values, Problems, Cross Reference); nothing is saved |
+| `engineer` | also save screens, tags, alarms and project settings |
+| `admin` | also add and remove users, set roles and reset passwords (Tools › Manage Users, or Users in the Project Explorer) |
+
+Users live in `users.toml` in the runtime's **data folder** (`--data`, default
+`<project>/data`), not in the project, so they never travel with the project and
+a project save cannot change them. Passwords are stored only as Argon2id hashes.
+
+- **First administrator**: while there are no users, the studio offers to create
+  one, but only to a browser on the machine the runtime runs on (loopback). From
+  elsewhere it says to do that, or to use `movi users`.
+- **Sessions**: an `HttpOnly`, `SameSite=Strict` cookie, ended after 8 hours
+  without use, by Sign Out, or when the runtime restarts. When a session ends
+  while someone is working, the studio asks them to sign in again and keeps their
+  unsaved edits.
+- **Wrong passwords**: after 5 in a row a name is locked for 30 seconds.
+- **Changes apply at once**: a new role, a removed user or a password reset takes
+  effect on the user's next request; a reset password ends their other sessions.
+- Every save is logged with the user who made it.
+
+From the command line (for scripts, or a forgotten administrator password; works
+while the runtime runs):
+
+```powershell
+.\target\release\movi.exe users list --data demo\data
+.\target\release\movi.exe users add kim --role engineer --data demo\data
+.\target\release\movi.exe users passwd admin --data demo\data
+.\target\release\movi.exe users role kim viewer --data demo\data
+.\target\release\movi.exe users remove kim --data demo\data
+```
+
+`add` and `passwd` ask for the password twice without echoing it
+(`--password-stdin` reads one line from standard input instead).
+
 ## Other commands
 
 ```powershell
@@ -180,9 +224,12 @@ symbol library through `web/shared/symbol-map.json`), trend controls.
 
 ## Known gaps
 
-- **Security**: no users, log-in or access levels; anyone who reaches the port can
-  write tags, acknowledge alarms and edit the project. Bind to `127.0.0.1` or a
-  trusted network. No TLS on the HTTP server. Pages from other sites cannot
+- **Security**: the studio signs users in (see *Studio users*), but the HMI does
+  not: anyone who reaches the port can write tags and acknowledge alarms. Bind to
+  `127.0.0.1` or a trusted network. No TLS on the HTTP server, so passwords and
+  session cookies cross the network in clear text unless a TLS reverse proxy
+  sits in front; behind a proxy on the same machine every request looks local,
+  so create the first administrator before exposing it. Pages from other sites cannot
   write, acknowledge or edit through an operator's browser: state-changing
   requests and WebSocket upgrades with a foreign `Origin` get 403, and `/api/`
   bodies must be `application/json`. Behind a reverse proxy with another host

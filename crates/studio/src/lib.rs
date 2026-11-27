@@ -15,6 +15,12 @@
 //! | `PUT /api/studio/alarms` body `[Alarm…]` | `alarms.toml` (removed when empty) |
 //! | `PUT /api/studio/meta` body ProjectMeta | `project.toml` |
 //!
+//! Every route needs a signed-in user (see `auth`): viewers may read the
+//! project, engineers may also save, administrators may also manage users.
+//! Session and user routes: `GET/POST/DELETE /api/studio/session`,
+//! `POST /api/studio/setup`, `PUT /api/studio/password`,
+//! `GET /api/studio/users`, `PUT/DELETE /api/studio/users/{name}`.
+//!
 //! Every body is deserialized into the model types before anything is written,
 //! so a save can never produce a file the runtime refuses to load. Saves answer
 //! `{"ok":true,"file":"…","diagnostics":[…]}` with the whole project re-validated;
@@ -29,11 +35,16 @@
 //! changed since that version, so a studio window holding an old copy cannot
 //! overwrite newer work. Successful saves answer the file's new `"version"`.
 
+pub mod auth;
 mod diag;
 mod files;
 mod names;
 mod screen_files;
+pub mod users;
 pub mod versions;
+
+pub use auth::{Auth, Signed};
+pub use users::Role;
 
 pub use diag::{snapshot, DiagnosticJson, Snapshot, LOAD_ERROR_CODE};
 pub use files::write_atomic;
@@ -44,7 +55,7 @@ use axum::body::Bytes;
 use axum::extract::{DefaultBodyLimit, Path as UrlPath, State};
 use axum::http::{HeaderMap, StatusCode};
 use axum::response::{IntoResponse, Response};
-use axum::routing::{get, put};
+use axum::routing::{get, post, put};
 use axum::{Json, Router};
 use moviclone_model::{Alarm, ProjectMeta, Screen, Tag};
 use serde::de::DeserializeOwned;
@@ -63,17 +74,35 @@ struct AppState {
     /// One save at a time: each save reads the folder back for diagnostics,
     /// and two interleaved saves would report each other's half-state.
     write_lock: Arc<Mutex<()>>,
+    auth: Arc<Auth>,
 }
 
-/// The studio API, rooted at `project_dir`. `reload_tx` is bumped after every
-/// successful save so the runtime can reload the project.
-pub fn routes(project_dir: PathBuf, reload_tx: watch::Sender<u64>) -> Router {
+impl auth::HasAuth for AppState {
+    fn auth(&self) -> &Arc<Auth> {
+        &self.auth
+    }
+}
+
+/// The studio API, rooted at `project_dir`, signing users in against `auth`.
+/// `reload_tx` is bumped after every successful save so the runtime can reload
+/// the project. The first-administrator setup needs the client address: serve
+/// with `into_make_service_with_connect_info::<SocketAddr>()`.
+pub fn routes(project_dir: PathBuf, auth: Arc<Auth>, reload_tx: watch::Sender<u64>) -> Router {
     let state = AppState {
         root: Arc::new(project_dir),
         reload: Arc::new(reload_tx),
         write_lock: Arc::new(Mutex::new(())),
+        auth,
     };
     Router::new()
+        .route(
+            "/api/studio/session",
+            get(auth::get_session::<AppState>).post(auth::post_session::<AppState>).delete(auth::delete_session::<AppState>),
+        )
+        .route("/api/studio/setup", post(auth::post_setup::<AppState>))
+        .route("/api/studio/password", put(auth::put_password::<AppState>))
+        .route("/api/studio/users", get(auth::get_users::<AppState>))
+        .route("/api/studio/users/:name", put(auth::put_user::<AppState>).delete(auth::delete_user::<AppState>))
         .route("/api/studio/project", get(get_project))
         .route("/api/studio/screens/:name", put(put_screen).delete(delete_screen))
         .route("/api/studio/tags", put(put_tags))
@@ -93,10 +122,20 @@ enum ApiError {
     /// The file changed since the version the client based its edit on.
     Stale { message: String, current: String },
     Internal(String),
+    Auth(auth::AuthError),
+}
+
+impl From<auth::AuthError> for ApiError {
+    fn from(e: auth::AuthError) -> Self {
+        ApiError::Auth(e)
+    }
 }
 
 impl IntoResponse for ApiError {
     fn into_response(self) -> Response {
+        if let ApiError::Auth(e) = self {
+            return e.into_response();
+        }
         if let ApiError::Stale { message, current } = self {
             let body = json!({ "ok": false, "conflict": true, "version": current, "error": message });
             return (StatusCode::CONFLICT, Json(body)).into_response();
@@ -109,7 +148,7 @@ impl IntoResponse for ApiError {
                 tracing::error!("studio: {m}");
                 (StatusCode::INTERNAL_SERVER_ERROR, m)
             }
-            ApiError::Stale { .. } => unreachable!("answered above"),
+            ApiError::Stale { .. } | ApiError::Auth(_) => unreachable!("answered above"),
         };
         (status, Json(json!({ "ok": false, "error": msg }))).into_response()
     }
@@ -123,6 +162,7 @@ fn parse_body<T: DeserializeOwned>(body: &Bytes, what: &str) -> Result<T, ApiErr
 /// the project and bumps the reload counter.
 async fn save<T, F>(
     state: AppState,
+    who: Signed,
     what: &'static str,
     expected: Option<String>,
     target: T,
@@ -132,6 +172,7 @@ where
     T: FnOnce(&Path) -> Result<PathBuf, ApiError> + Send + 'static,
     F: FnOnce(&Path, &Path) -> Result<(), ApiError> + Send + 'static,
 {
+    who.require(Role::Engineer, "saving")?;
     let root = state.root.clone();
     let lock = state.write_lock.clone();
     let (file, version, snap) = tokio::task::spawn_blocking(move || {
@@ -158,7 +199,7 @@ where
 
     state.reload.send_modify(|n| *n = n.wrapping_add(1));
     let errors = snap.diagnostics.iter().filter(|d| d.severity == "error").count();
-    tracing::info!(file = %file, what, errors, diagnostics = snap.diagnostics.len(), "studio saved");
+    tracing::info!(user = %who.name, file = %file, what, errors, diagnostics = snap.diagnostics.len(), "studio saved");
     Ok(Json(json!({ "ok": true, "file": file, "version": version, "diagnostics": snap.diagnostics })))
 }
 
@@ -169,7 +210,7 @@ fn expected_version(headers: &HeaderMap) -> Option<String> {
 
 // ---------------------------------------------------------------- handlers
 
-async fn get_project(State(state): State<AppState>) -> Result<Json<serde_json::Value>, ApiError> {
+async fn get_project(State(state): State<AppState>, _me: Signed) -> Result<Json<serde_json::Value>, ApiError> {
     let root = state.root.clone();
     let snap = tokio::task::spawn_blocking(move || snapshot(&root))
         .await
@@ -190,6 +231,7 @@ impl From<Refusal> for ApiError {
 
 async fn put_screen(
     State(state): State<AppState>,
+    me: Signed,
     UrlPath(name): UrlPath<String>,
     headers: HeaderMap,
     body: Bytes,
@@ -206,7 +248,7 @@ async fn put_screen(
         return Err(ApiError::BadRequest("screen width and height must be positive numbers".into()));
     }
     let target = move |root: &Path| Ok(file_for_save(root, &name)?);
-    save(state, "screen", expected_version(&headers), target, move |_, path| {
+    save(state, me, "screen", expected_version(&headers), target, move |_, path| {
         files::write_screen(path, &screen).map_err(ApiError::Internal)
     })
     .await
@@ -214,6 +256,7 @@ async fn put_screen(
 
 async fn delete_screen(
     State(state): State<AppState>,
+    me: Signed,
     UrlPath(name): UrlPath<String>,
     headers: HeaderMap,
 ) -> Result<Json<serde_json::Value>, ApiError> {
@@ -222,7 +265,7 @@ async fn delete_screen(
         let name = name.clone();
         move |root: &Path| Ok(file_for_delete(root, &name)?)
     };
-    save(state, "screen deleted", expected_version(&headers), target, move |_, path| match std::fs::remove_file(path) {
+    save(state, me, "screen deleted", expected_version(&headers), target, move |_, path| match std::fs::remove_file(path) {
         Ok(()) => Ok(()),
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
             Err(ApiError::NotFound(format!("screen {name:?} does not exist")))
@@ -234,11 +277,12 @@ async fn delete_screen(
 
 async fn put_tags(
     State(state): State<AppState>,
+    me: Signed,
     headers: HeaderMap,
     body: Bytes,
 ) -> Result<Json<serde_json::Value>, ApiError> {
     let tags: Vec<Tag> = parse_body(&body, "tag list")?;
-    save(state, "tags", expected_version(&headers), |root| Ok(files::tags_file(root)), move |root, _| {
+    save(state, me, "tags", expected_version(&headers), |root| Ok(files::tags_file(root)), move |root, _| {
         files::write_tags(root, tags).map_err(ApiError::Internal)
     })
     .await
@@ -246,11 +290,12 @@ async fn put_tags(
 
 async fn put_alarms(
     State(state): State<AppState>,
+    me: Signed,
     headers: HeaderMap,
     body: Bytes,
 ) -> Result<Json<serde_json::Value>, ApiError> {
     let alarms: Vec<Alarm> = parse_body(&body, "alarm list")?;
-    save(state, "alarms", expected_version(&headers), |root| Ok(files::alarms_file(root)), move |root, _| {
+    save(state, me, "alarms", expected_version(&headers), |root| Ok(files::alarms_file(root)), move |root, _| {
         files::write_alarms(root, alarms).map_err(ApiError::Internal)
     })
     .await
@@ -258,6 +303,7 @@ async fn put_alarms(
 
 async fn put_meta(
     State(state): State<AppState>,
+    me: Signed,
     headers: HeaderMap,
     body: Bytes,
 ) -> Result<Json<serde_json::Value>, ApiError> {
@@ -265,7 +311,7 @@ async fn put_meta(
     if meta.name.trim().is_empty() {
         return Err(ApiError::BadRequest("project name is empty".into()));
     }
-    save(state, "project settings", expected_version(&headers), |root| Ok(files::project_file(root)), move |root, _| {
+    save(state, me, "project settings", expected_version(&headers), |root| Ok(files::project_file(root)), move |root, _| {
         files::write_meta(root, &meta).map_err(ApiError::Internal)
     })
     .await

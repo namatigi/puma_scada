@@ -7,6 +7,7 @@
 //! Serves `web/` statically (`/studio/`, `/shared/`, `/hmi/`), the studio API and
 //! `GET /api/bundle` read fresh from disk, so a save is visible on the next fetch.
 //! There is no `/ws`: the studio shows "runtime offline" and works without live values.
+//! Studio users are kept in `<project-dir>/data/users.toml`, as with the runtime.
 
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Redirect};
@@ -62,6 +63,8 @@ async fn main() -> anyhow::Result<()> {
     let project = args.project.canonicalize().map_err(|e| anyhow::anyhow!("{}: {e}", args.project.display()))?;
 
     let (reload_tx, mut reload_rx) = tokio::sync::watch::channel(0u64);
+    let users = moviclone_studio::users::users_file(&project.join("data"));
+    let auth = moviclone_studio::Auth::open(users).map_err(anyhow::Error::msg)?;
     tokio::spawn(async move {
         while reload_rx.changed().await.is_ok() {
             tracing::info!(n = *reload_rx.borrow(), "project changed on disk (runtime would reload)");
@@ -84,7 +87,7 @@ async fn main() -> anyhow::Result<()> {
                 }
             }),
         )
-        .merge(moviclone_studio::routes(project.clone(), reload_tx))
+        .merge(moviclone_studio::routes(project.clone(), auth, reload_tx))
         .nest_service("/studio", ServeDir::new(args.web.join("studio")))
         .nest_service("/shared", ServeDir::new(args.web.join("shared")))
         .nest_service("/hmi", ServeDir::new(args.web.join("hmi")));
@@ -92,6 +95,6 @@ async fn main() -> anyhow::Result<()> {
     let addr = SocketAddr::from(([127, 0, 0, 1], args.port));
     let listener = tokio::net::TcpListener::bind(addr).await?;
     tracing::info!(project = %project.display(), "studio dev server on http://{addr}/studio/");
-    axum::serve(listener, app).await?;
+    axum::serve(listener, app.into_make_service_with_connect_info::<SocketAddr>()).await?;
     Ok(())
 }

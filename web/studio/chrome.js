@@ -14,7 +14,7 @@ export const MENUS = [
   ['Project', ['project.tags', 'project.alarms', 'project.settings', 'project.data', 'project.xref', '-', 'project.validate', 'file.reload']],
   ['Design', ['format.front', 'format.back', 'format.forward', 'format.backward', '-', 'design.centre-h', 'design.centre-v', '-', 'design.where-used']],
   ['Format', ['format.align-left', 'format.align-center', 'format.align-right', '-', 'format.align-top', 'format.align-middle', 'format.align-bottom', '-', 'format.dist-h', 'format.dist-v', '-', 'format.same-w', 'format.same-h', 'format.same-size']],
-  ['Tools', ['tools.palette', 'run.start', 'tools.hmi']],
+  ['Tools', ['tools.palette', 'run.start', 'tools.hmi', '-', 'user.users', 'user.password', 'user.sign-out']],
   ['Help', ['help.shortcuts', 'help.about']],
 ];
 

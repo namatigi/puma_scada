@@ -29,6 +29,14 @@ Quality is `"good" | "uncertain" | "bad"`.
 | `POST /api/alarms/{name}/shelve` body `{"minutes":30}` / `…/unshelve` | alarms | `{"ok":true}` |
 | `GET /api/alarms/journal?limit=200` | alarms | `{"events":[AlarmEvent…]}` newest first |
 | `GET /api/diagnostics` | gateway | `{"drivers":[{"name":…,"connected":bool,"requests":n,"errors":n,"last_error":…}], "uptime_s":…}` |
+| `GET /api/studio/session` | studio | `{"ok":true,"user":{"name":"…","role":"viewer|engineer|admin"}|null,"setup":bool,"can_setup":bool}` |
+| `POST /api/studio/session` body `{"name","password"}` | studio | signs in: `{"ok":true,"user":{…}}` and a `Set-Cookie: mc_studio=…; HttpOnly; SameSite=Strict` |
+| `DELETE /api/studio/session` | studio | signs out (clears the cookie) |
+| `POST /api/studio/setup` body `{"name","password"}` | studio | creates the first administrator and signs in; only while there are no users, only from loopback |
+| `PUT /api/studio/password` body `{"current","new"}` | studio | changes the signed-in user's password |
+| `GET /api/studio/users` | studio | (admin) `{"ok":true,"users":[{"name","role"}…],"roles":[…]}` |
+| `PUT /api/studio/users/{name}` body `{"role"?,"password"?}` | studio | (admin) creates a user (both fields) or changes role and/or password |
+| `DELETE /api/studio/users/{name}` | studio | (admin) removes a user and ends their sessions |
 | `GET /api/studio/project` | studio | `{"project":Project,"versions":{"meta":"…","tags":"…","alarms":"…","screen:<name>":"…"},"diagnostics":[Diagnostic…]}` |
 | `PUT /api/studio/screens/{name}` body Screen | studio | saves `screens/<name>.toml`; `{"ok":bool,"file":"…","version":"…","diagnostics":[…]}` |
 | `DELETE /api/studio/screens/{name}` | studio | removes the screen |
@@ -37,6 +45,16 @@ Quality is `"good" | "uncertain" | "bad"`.
 | `PUT /api/studio/meta` body ProjectMeta | studio | saves `project.toml` |
 
 `Diagnostic` JSON: `{"severity":"error|warning|note","code":"E011","file":"tags.toml","item":"tag \"X\"","message":"…"}`.
+
+**Studio users.** Every `/api/studio/…` route except `session` and `setup`
+needs the session cookie. Without a valid session the answer is **401**
+`{"ok":false,"auth":"required","error":"…"}`; a role that may not do something
+gets **403** `{"ok":false,"auth":"forbidden","error":"…"}`. Viewers may `GET`;
+saves and deletes need `engineer`; `/api/studio/users…` needs `admin`. Wrong
+passwords answer 401 (the same message for unknown names); after 5 in a row the
+name answers **429** for 30 s. The last administrator cannot be demoted, and an
+administrator cannot remove themself. Users are kept in `<data>/users.toml`
+(Argon2id hashes); see README, *Studio users*.
 
 **Studio file versions.** `versions` holds a hash of each edited file (`"absent"`
 when it does not exist). A studio `PUT` or `DELETE` may send the version it was

@@ -1,7 +1,7 @@
 //! Cross-site request protection for every route of the gateway.
 //!
-//! The runtime has no authentication yet, so the browser itself is the
-//! attack surface: any page an operator opens could otherwise `fetch()` a
+//! The HMI routes have no authentication (the studio's do, with a session
+//! cookie), so the browser itself is the attack surface: any page an operator opens could otherwise `fetch()` a
 //! write to `http://<hmi-host>/api/write` (a "simple" request needs no CORS
 //! preflight) or open `ws://<hmi-host>/ws` and send writes.
 //!

@@ -40,8 +40,9 @@ Write-Host "Checking demo\oxoafrica..." -ForegroundColor Cyan
 if ($LASTEXITCODE -ne 0) { throw "the demo project does not pass 'movi build'" }
 
 if ($Fresh -and (Test-Path $data)) {
+    # Keeps users.toml: the studio sign-ins are not demo history.
     Write-Host "Removing previous demo history and alarm journal ($data)" -ForegroundColor Yellow
-    Remove-Item -Recurse -Force $data
+    Get-ChildItem -Force $data | Where-Object { $_.Name -ne "users.toml" } | Remove-Item -Recurse -Force
 }
 
 $hostPart, $port = $Listen.Split(":")
@@ -51,6 +52,9 @@ Write-Host "  HMI     http://${shown}:$port/hmi/" -ForegroundColor Green
 Write-Host "  Studio  http://${shown}:$port/studio/" -ForegroundColor Green
 Write-Host "  API     http://${shown}:$port/api/diagnostics" -ForegroundColor DarkGray
 Write-Host "  Data    $data" -ForegroundColor DarkGray
+if (-not (Test-Path (Join-Path $data "users.toml"))) {
+    Write-Host "  First studio visit: create the administrator on this machine." -ForegroundColor Yellow
+}
 Write-Host "  Ctrl+C stops the runtime." -ForegroundColor DarkGray
 Write-Host ""
 

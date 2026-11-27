@@ -26,7 +26,7 @@ export function formDialog({ title, fields, okText = 'OK', validate, text }) {
         input = h('select', { name: f.name }, f.options.map((o) => h('option', { value: o.value ?? o, text: o.label ?? o })));
         input.value = f.value ?? '';
       } else {
-        input = h('input', { name: f.name, type: f.type ?? 'text', value: f.value ?? '', placeholder: f.placeholder ?? '', spellcheck: 'false', autocomplete: 'off' });
+        input = h('input', { name: f.name, type: f.type ?? 'text', value: f.value ?? '', placeholder: f.placeholder ?? '', spellcheck: 'false', autocomplete: f.type === 'password' ? 'new-password' : 'off' });
       }
       inputs[f.name] = input;
       return h('label', {}, h('span', { text: f.label }), input);
@@ -38,7 +38,8 @@ export function formDialog({ title, fields, okText = 'OK', validate, text }) {
     const close = (v) => { back.remove(); resolve(v); };
     form.addEventListener('submit', (e) => {
       e.preventDefault();
-      const values = Object.fromEntries(Object.entries(inputs).map(([k, i]) => [k, i.type === 'number' ? Number(i.value) : i.value.trim()]));
+      // Passwords are taken as typed: spaces are part of them.
+      const values = Object.fromEntries(Object.entries(inputs).map(([k, i]) => [k, i.type === 'number' ? Number(i.value) : i.type === 'password' ? i.value : i.value.trim()]));
       const problem = validate?.(values);
       if (problem) { err.textContent = problem; return; }
       close(values);

@@ -277,6 +277,30 @@ async function run() {
     eq([err?.status, err?.body?.conflict, err?.body?.version], [409, true, 'new']);
   });
 
+  await check('a request refused for an ended session signs in again and is sent once more', async () => {
+    let signedIn = false;
+    let asked = 0;
+    const calls = [];
+    const fake = async (url, init) => {
+      calls.push(`${init.method} ${url}`);
+      if (!signedIn) return { ok: false, status: 401, text: async () => JSON.stringify({ ok: false, auth: 'required', error: 'sign in' }) };
+      return { ok: true, status: 200, text: async () => JSON.stringify({ ok: true, file: 'tags.toml', version: 'v3', diagnostics: [] }) };
+    };
+    const api = createStudioApi('', { fetchImpl: fake, onSignedOut: async () => { asked += 1; signedIn = true; return true; } });
+    eq((await api.saveTags([], 'v2')).version, 'v3');
+    eq([asked, calls], [1, ['PUT /api/studio/tags', 'PUT /api/studio/tags']]);
+    // A wrong password at sign-in is an answer, not an ended session.
+    signedIn = false;
+    let err = null;
+    try { await api.signIn('kim', 'nope'); } catch (e) { err = e; }
+    eq([err?.status, asked], [401, 1]);
+    // Declined (the dialog was not completed): the 401 reaches the caller.
+    const api2 = createStudioApi('', { fetchImpl: fake, onSignedOut: async () => false });
+    err = null;
+    try { await api2.project(); } catch (e) { err = e; }
+    eq(err?.body?.auth, 'required');
+  });
+
   group = 'store versions';
   await check('versions per part, absent for new parts, changes detected', () => {
     const st = createStore();

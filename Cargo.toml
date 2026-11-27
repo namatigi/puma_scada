@@ -49,3 +49,11 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 # redb is very slow unoptimized; the historian (and its tests) run in debug builds too.
 [profile.dev.package.redb]
 opt-level = 2
+
+# Password hashing (studio users) is deliberately slow; unoptimized it takes
+# seconds per hash, which makes debug builds and tests crawl.
+[profile.dev.package.argon2]
+opt-level = 3
+
+[profile.dev.package.blake2]
+opt-level = 3

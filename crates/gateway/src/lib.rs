@@ -141,8 +141,11 @@ pub fn router(cfg: GatewayConfig) -> Router {
         .layer(axum::middleware::from_fn_with_state(policy, guard::guard))
 }
 
-/// Serves `app` on `listener` until `shutdown` completes.
+/// Serves `app` on `listener` until `shutdown` completes. Handlers can read the
+/// client address (`ConnectInfo<SocketAddr>`), e.g. the studio's loopback-only setup.
 pub async fn serve(listener: TcpListener, app: Router, shutdown: impl Future<Output = ()> + Send + 'static) -> anyhow::Result<()> {
-    axum::serve(listener, app).with_graceful_shutdown(shutdown).await?;
+    axum::serve(listener, app.into_make_service_with_connect_info::<std::net::SocketAddr>())
+        .with_graceful_shutdown(shutdown)
+        .await?;
     Ok(())
 }

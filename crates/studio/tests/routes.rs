@@ -7,6 +7,7 @@ use serde_json::{json, Value};
 use std::fs;
 use std::path::Path;
 use tokio::sync::watch;
+use moviclone_studio::users;
 use tower::ServiceExt;
 
 const PROJECT: &str = r##"name = "Test plant"
@@ -61,12 +62,31 @@ height = 200.0
 
 struct Fixture {
     dir: tempfile::TempDir,
+    /// The runtime's data folder (users.toml), outside the project.
+    _data: tempfile::TempDir,
     app: Router,
     reload: watch::Receiver<u64>,
+    /// Session cookie of the signed-in engineer.
+    cookie: String,
+}
+
+/// Signs `name` in on `app` and returns the `Cookie` header value.
+async fn sign_in(app: &Router, name: &str, password: &str) -> String {
+    let body = json!({ "name": name, "password": password }).to_string();
+    let req = Request::builder()
+        .method(Method::POST)
+        .uri("/api/studio/session")
+        .header("content-type", "application/json")
+        .body(Body::from(body))
+        .expect("request");
+    let res = app.clone().oneshot(req).await.expect("response");
+    assert_eq!(res.status(), StatusCode::OK, "sign-in of {name}");
+    let set = res.headers().get("set-cookie").and_then(|v| v.to_str().ok()).expect("session cookie").to_string();
+    set.split(';').next().expect("cookie pair").to_string()
 }
 
 impl Fixture {
-    fn new() -> Self {
+    async fn new() -> Self {
         let dir = tempfile::tempdir().expect("tempdir");
         let root = dir.path();
         fs::create_dir_all(root.join("screens")).expect("mkdir");
@@ -74,9 +94,15 @@ impl Fixture {
         fs::write(root.join("tags.toml"), TAGS).expect("write");
         fs::write(root.join("screens/Main.toml"), MAIN).expect("write");
         fs::write(root.join("screens/Popup.toml"), POPUP).expect("write");
+        let data = tempfile::tempdir().expect("tempdir");
+        let file = users::users_file(data.path());
+        let hash = users::hash_password("engineer-pass").expect("hash");
+        users::save(&file, &[users::User { name: "eng".into(), role: users::Role::Engineer, password: hash }]).expect("users");
+        let auth = moviclone_studio::Auth::open(file).expect("auth");
         let (tx, rx) = watch::channel(0u64);
-        let app = moviclone_studio::routes(root.to_path_buf(), tx);
-        Self { dir, app, reload: rx }
+        let app = moviclone_studio::routes(root.to_path_buf(), auth, tx);
+        let cookie = sign_in(&app, "eng", "engineer-pass").await;
+        Self { dir, _data: data, app, reload: rx, cookie }
     }
 
     fn root(&self) -> &Path {
@@ -88,7 +114,7 @@ impl Fixture {
     }
 
     async fn call(&self, method: Method, uri: &str, body: Option<String>) -> (StatusCode, Value) {
-        let mut req = Request::builder().method(method).uri(uri);
+        let mut req = Request::builder().method(method).uri(uri).header("cookie", &self.cookie);
         if body.is_some() {
             req = req.header("content-type", "application/json");
         }
@@ -120,7 +146,7 @@ fn codes(v: &Value) -> Vec<String> {
 
 #[tokio::test]
 async fn get_project_returns_project_and_diagnostics() {
-    let fx = Fixture::new();
+    let fx = Fixture::new().await;
     let v = fx.project().await;
     assert_eq!(v["project"]["meta"]["name"], "Test plant");
     assert_eq!(v["project"]["screens"].as_array().map(Vec::len), Some(2));
@@ -135,7 +161,7 @@ async fn get_project_returns_project_and_diagnostics() {
 
 #[tokio::test]
 async fn put_screen_persists_and_bumps_reload() {
-    let fx = Fixture::new();
+    let fx = Fixture::new().await;
     let mut screen = fx.project().await["project"]["screens"][0].clone();
     assert_eq!(screen["name"], "Main");
     screen["element"][0]["x"] = json!(42.5);
@@ -161,7 +187,7 @@ async fn put_screen_persists_and_bumps_reload() {
 
 #[tokio::test]
 async fn put_new_screen_creates_file_and_reports_broken_references() {
-    let fx = Fixture::new();
+    let fx = Fixture::new().await;
     let body = json!({
         "name": "Extra", "width": 400.0, "height": 300.0,
         "element": [{ "id": "D", "kind": "display", "tag": "Missing", "x": 0, "y": 0, "w": 10, "h": 10 }]
@@ -176,7 +202,7 @@ async fn put_new_screen_creates_file_and_reports_broken_references() {
 
 #[tokio::test]
 async fn screen_name_must_match_url() {
-    let fx = Fixture::new();
+    let fx = Fixture::new().await;
     let body = json!({ "name": "Other", "width": 10.0, "height": 10.0 });
     let (status, v) = fx.call(Method::PUT, "/api/studio/screens/Main", Some(body.to_string())).await;
     assert_eq!(status, StatusCode::BAD_REQUEST);
@@ -187,7 +213,7 @@ async fn screen_name_must_match_url() {
 
 #[tokio::test]
 async fn traversal_attempts_are_refused_and_write_nothing() {
-    let fx = Fixture::new();
+    let fx = Fixture::new().await;
     let before: Vec<_> = list_all(fx.root());
     let outside = fx.root().parent().expect("parent").join("evil.toml");
     for name in ["..", "..%2Fevil", "..%5Cevil", "%2e%2e", "a%2Fb", "C%3Aevil", ".hidden", "CON", "x%00", "with%20space"] {
@@ -209,7 +235,7 @@ async fn traversal_attempts_are_refused_and_write_nothing() {
 
 #[tokio::test]
 async fn invalid_screen_bodies_are_refused() {
-    let fx = Fixture::new();
+    let fx = Fixture::new().await;
     let original = fx.read("screens/Main.toml");
     let bad = [
         "not json".to_string(),
@@ -234,7 +260,7 @@ async fn invalid_screen_bodies_are_refused() {
 
 #[tokio::test]
 async fn delete_screen_removes_file() {
-    let fx = Fixture::new();
+    let fx = Fixture::new().await;
     let (status, v) = fx.call(Method::DELETE, "/api/studio/screens/Popup", None).await;
     assert_eq!(status, StatusCode::OK, "{v}");
     assert!(!fx.root().join("screens/Popup.toml").exists());
@@ -248,7 +274,7 @@ async fn delete_screen_removes_file() {
 
 #[tokio::test]
 async fn screen_loaded_from_differently_named_file_is_saved_in_place() {
-    let fx = Fixture::new();
+    let fx = Fixture::new().await;
     fs::rename(fx.root().join("screens/Popup.toml"), fx.root().join("screens/popup-old.toml")).expect("rename");
     let body = json!({ "name": "Popup", "width": 333.0, "height": 200.0 });
     let (status, v) = fx.call(Method::PUT, "/api/studio/screens/Popup", Some(body.to_string())).await;
@@ -260,7 +286,7 @@ async fn screen_loaded_from_differently_named_file_is_saved_in_place() {
 
 #[tokio::test]
 async fn put_tags_persists_and_validates() {
-    let fx = Fixture::new();
+    let fx = Fixture::new().await;
     let mut tags = fx.project().await["project"]["tags"].clone();
     tags[0]["description"] = json!("Line flow");
     tags.as_array_mut().expect("tags").push(json!({
@@ -285,7 +311,7 @@ async fn put_tags_persists_and_validates() {
 
 #[tokio::test]
 async fn invalid_tag_bodies_are_refused() {
-    let fx = Fixture::new();
+    let fx = Fixture::new().await;
     let original = fx.read("tags.toml");
     for body in [
         json!({ "name": "A", "type": "bool" }).to_string(),
@@ -304,7 +330,7 @@ async fn invalid_tag_bodies_are_refused() {
 
 #[tokio::test]
 async fn put_alarms_writes_and_empty_list_removes_file() {
-    let fx = Fixture::new();
+    let fx = Fixture::new().await;
     let alarms = json!([{
         "name": "HighFlow", "tag": "Flow", "when": "above", "limit": 120.0, "deadband": 2.0,
         "severity": "high", "message": "Flow above 120", "area": "Main"
@@ -342,7 +368,7 @@ async fn put_alarms_writes_and_empty_list_removes_file() {
 
 #[tokio::test]
 async fn put_meta_persists_and_refuses_bad_bodies() {
-    let fx = Fixture::new();
+    let fx = Fixture::new().await;
     let mut meta = fx.project().await["project"]["meta"].clone();
     meta["description"] = json!("Engineering copy");
     meta["main_screen"] = json!("Nowhere");
@@ -366,7 +392,7 @@ async fn put_meta_persists_and_refuses_bad_bodies() {
 
 #[tokio::test]
 async fn broken_file_is_reported_not_fatal() {
-    let fx = Fixture::new();
+    let fx = Fixture::new().await;
     fs::write(fx.root().join("tags.toml"), "[[tag]]\nname = \"X\"\ntype = \"nope\"\n").expect("write");
     let v = fx.project().await;
     assert!(v["project"].is_null());
@@ -382,7 +408,7 @@ async fn broken_file_is_reported_not_fatal() {
 
 #[tokio::test]
 async fn unknown_routes_and_methods_are_rejected() {
-    let fx = Fixture::new();
+    let fx = Fixture::new().await;
     let (status, _) = fx.call(Method::GET, "/api/studio/screens/Main", None).await;
     assert_eq!(status, StatusCode::METHOD_NOT_ALLOWED);
     let (status, _) = fx.call(Method::POST, "/api/studio/tags", Some("[]".into())).await;
@@ -407,7 +433,7 @@ fn list_all(root: &Path) -> Vec<String> {
 
 #[tokio::test]
 async fn screen_names_differing_only_in_case_never_touch_each_others_file() {
-    let fx = Fixture::new();
+    let fx = Fixture::new().await;
     let original = fx.read("screens/Main.toml");
     let body = json!({ "name": "main", "width": 100.0, "height": 100.0 });
     let (status, v) = fx.call(Method::PUT, "/api/studio/screens/main", Some(body.to_string())).await;
@@ -445,7 +471,11 @@ async fn screen_names_differing_only_in_case_never_touch_each_others_file() {
 
 impl Fixture {
     async fn call_if_match(&self, method: Method, uri: &str, version: &str, body: Option<String>) -> (StatusCode, Value) {
-        let mut req = Request::builder().method(method).uri(uri).header("if-match", format!("\"{version}\""));
+        let mut req = Request::builder()
+            .method(method)
+            .uri(uri)
+            .header("cookie", &self.cookie)
+            .header("if-match", format!("\"{version}\""));
         if body.is_some() {
             req = req.header("content-type", "application/json");
         }
@@ -461,7 +491,7 @@ impl Fixture {
 /// that wiped out a fix in the demo (a stale Manifold) is refused with 409.
 #[tokio::test]
 async fn stale_screen_save_is_refused_and_writes_nothing() {
-    let fx = Fixture::new();
+    let fx = Fixture::new().await;
     let opened = fx.project().await;
     let old_version = opened["versions"]["screen:Main"].as_str().expect("version of Main").to_string();
     let mut stale = opened["project"]["screens"][0].clone();
@@ -495,7 +525,7 @@ async fn stale_screen_save_is_refused_and_writes_nothing() {
 
 #[tokio::test]
 async fn stale_delete_and_list_saves_are_refused_unchecked_saves_still_work() {
-    let fx = Fixture::new();
+    let fx = Fixture::new().await;
     let opened = fx.project().await;
     let versions = opened["versions"].clone();
     assert_eq!(versions["alarms"], moviclone_studio::versions::ABSENT);

@@ -7,7 +7,7 @@ import { icon } from './icons.js';
 
 const SOON = 'Not supported by Moviclone yet';
 
-export function createExplorer(root, { store, open, actions }) {
+export function createExplorer(root, { store, open, actions, isAdmin = () => false }) {
   const expanded = new Set(loadExpanded());
   let selectedId = null;
   let filter = '';
@@ -61,7 +61,9 @@ export function createExplorer(root, { store, open, actions }) {
             dim('redundancy', 'Redundancy', 'redundancy'),
           ],
         },
-        dim('users', 'Users', 'users'),
+        isAdmin()
+          ? { id: 'users', label: 'Users', icon: 'users', doc: 'users', title: 'Who may sign in to the studio, and their roles' }
+          : { id: 'users', label: 'Users', icon: 'users', dim: true, title: 'Only administrators manage studio users' },
       ],
     }];
   }
@@ -77,14 +79,14 @@ export function createExplorer(root, { store, open, actions }) {
       for (const n of nodes) {
         if (!matches(n)) continue;
         const hasKids = Boolean(n.children?.length);
-        const open = filter ? true : expanded.has(n.id);
+        const isOpen = filter ? true : expanded.has(n.id);
         const row = h('div', {
-          class: `st-node${n.dim ? ' dim' : ''}${n.dirty ? ' dirty' : ''}${n.main ? ' main' : ''}${selectedId === n.id ? ' selected' : ''}${open && hasKids ? ' open' : ''}`,
-          role: 'treeitem', 'aria-expanded': hasKids ? String(open) : undefined, 'data-id': n.id, title: n.title ?? '',
+          class: `st-node${n.dim ? ' dim' : ''}${n.dirty ? ' dirty' : ''}${n.main ? ' main' : ''}${selectedId === n.id ? ' selected' : ''}${isOpen && hasKids ? ' open' : ''}`,
+          role: 'treeitem', 'aria-expanded': hasKids ? String(isOpen) : undefined, 'data-id': n.id, title: n.title ?? '',
           style: { paddingLeft: `${4 + depth * 14}px` },
         },
         h('span', { class: 'twisty' }, hasKids ? icon('chevron') : null),
-        icon(n.icon === 'folder' && open && hasKids ? 'folder-open' : n.icon),
+        icon(n.icon === 'folder' && isOpen && hasKids ? 'folder-open' : n.icon),
         h('span', { class: 'lbl', text: n.label }),
         n.count !== undefined ? h('span', { class: 'count', text: `(${n.count})` }) : null,
         n.badge ? h('span', { class: 'badge', text: String(n.badge), title: `${n.badge} error(s)` }) : null);
@@ -105,7 +107,7 @@ export function createExplorer(root, { store, open, actions }) {
           contextMenu(n, e.clientX, e.clientY);
         });
         rows.push(row);
-        if (hasKids && open) walk(n.children, depth + 1);
+        if (hasKids && isOpen) walk(n.children, depth + 1);
       }
     };
     walk(model(), 0);

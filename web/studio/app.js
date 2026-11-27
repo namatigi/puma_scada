@@ -8,6 +8,8 @@ import { toast } from '../shared/toast.js';
 import { formatValue } from '../shared/format.js';
 import { createStore } from './store.js';
 import { createStudioApi, StudioApiError } from './studio-api.js';
+import { signIn } from './signin.js';
+import { createUsersDoc, askPassword, ROLE_INFO } from './users-doc.js';
 import { createCommands } from './commands.js';
 import { createMenuBar, createToolbar, openPalette } from './chrome.js';
 import { createExplorer } from './explorer.js';
@@ -21,12 +23,16 @@ import { createAlarmsDoc } from './alarms-doc.js';
 import { createSettingsDoc, createDriverDoc, createDataDoc, createXrefDoc } from './forms-docs.js';
 import { createBottomDock } from './bottom.js';
 import { createLive } from './live.js';
-import { h, formDialog, confirmDialog, initSplitters } from './ui.js';
+import { h, formDialog, confirmDialog, initSplitters, showMenu } from './ui.js';
 import { icon } from './icons.js';
 import { elementsToml, screenHeaderToml, tomlArrayOfTables, tomlTableBody } from './toml.js';
 import { clone, isScreenName, localScreenChecks, parseItem, elementRefs, KIND_INFO } from './model.js';
 
 const api = createStudioApi('');
+/** The signed-in user, {name, role}. */
+let me = null;
+const canSave = () => me?.role === 'engineer' || me?.role === 'admin';
+const isAdmin = () => me?.role === 'admin';
 const store = createStore();
 const commands = createCommands();
 const prefs = loadPrefs();
@@ -48,6 +54,10 @@ let saving = false;
 async function boot() {
   let res;
   try {
+    const session = await api.session();
+    me = session.user ?? (await signIn(api, session));
+    api.onSignedOut = signInAgain;
+    document.getElementById('boot').replaceChildren(h('div', { class: 'st-logo st-logo-big' }), h('div', { text: 'Loading project…' }));
     [res, symbolMap] = await Promise.all([api.project(), loadSymbolMap()]);
   } catch (err) {
     bootError(`Could not load the project from ${location.origin}/api/studio/project`, err.message);
@@ -64,6 +74,71 @@ async function boot() {
   document.getElementById('boot').remove();
   restoreSession();
   live.start();
+  renderUser();
+  store.log(`Signed in as ${me.name} (${me.role})${canSave() ? '' : ': read only, saving is off'}`, canSave() ? 'ok' : 'warn');
+}
+
+// ---------------------------------------------------------------- user
+
+let reauth = null;
+/** The session ended while working: sign in again over the open studio, keeping unsaved edits. */
+function signInAgain() {
+  reauth ??= (async () => {
+    try {
+      const session = await api.session().catch(() => ({}));
+      const prev = me;
+      me = session.user ?? (await signIn(api, session, { modal: true, name: me?.name ?? '', reason: 'Your studio session ended. Sign in again to go on; your unsaved edits are kept.' }));
+      if (prev && prev.name.toLowerCase() !== me.name.toLowerCase()) store.log(`Signed in as ${me.name} (${me.role}) instead of ${prev.name}`, 'warn');
+      renderUser();
+      return true;
+    } finally {
+      reauth = null;
+    }
+  })();
+  return reauth;
+}
+
+function renderUser() {
+  const b = document.getElementById('user-menu');
+  if (!me) { b.hidden = true; return; }
+  b.hidden = false;
+  b.replaceChildren(icon('users'), h('span', { text: me.name }), h('span', { class: `st-role st-role-${me.role}`, text: canSave() ? me.role : 'read only' }));
+  b.title = `${me.name}: ${me.role}. ${ROLE_INFO[me.role] ?? ''}`;
+  b.onclick = () => {
+    const r = b.getBoundingClientRect();
+    showMenu([
+      { label: `${me.name} (${me.role})`, disabled: true, title: ROLE_INFO[me.role] },
+      '-',
+      { label: 'Change Password…', run: () => commands.run('user.password') },
+      { label: 'Manage Users…', icon: 'users', disabled: !isAdmin(), run: () => commands.run('user.users') },
+      '-',
+      { label: 'Sign Out', run: () => commands.run('user.sign-out') },
+    ], r.right - 200, r.bottom);
+  };
+  explorer?.render();
+  refreshChrome();
+}
+
+async function changePassword() {
+  const v = await askPassword('Change your password', { current: true, text: 'Your other studio sessions end.' });
+  if (!v) return;
+  try {
+    await api.changePassword(v.current, v.password);
+    toast('Password changed', { kind: 'ok' });
+    store.log('Changed your studio password', 'ok');
+  } catch (err) {
+    toast(err.message, { kind: 'error' });
+  }
+}
+
+let signingOut = false;
+async function signOut() {
+  const { dirty, deleted } = store.pending();
+  if ((dirty.length || deleted.length) && !(await confirmDialog({ title: 'Sign out', text: `${dirty.length + deleted.length} document(s) have unsaved changes, which are lost when you sign out.`, okText: 'Sign out', danger: true }))) return;
+  try { await api.signOut(); } catch { /* signed out anyway */ }
+  me = null;
+  signingOut = true;
+  location.reload();
 }
 
 function bootError(title, detail) {
@@ -83,6 +158,7 @@ function buildUi() {
     store,
     open: (docId) => openDoc(docId),
     actions: { newScreen, renameScreen, duplicateScreen, deleteScreen, setStartup },
+    isAdmin,
   });
 
   docs = createDocuments(document.getElementById('documents'), {
@@ -148,7 +224,7 @@ function buildUi() {
   document.addEventListener('keydown', onKey);
   window.addEventListener('beforeunload', (e) => {
     const { dirty, deleted } = store.pending();
-    if (dirty.length || deleted.length) { e.preventDefault(); e.returnValue = ''; }
+    if (!signingOut && (dirty.length || deleted.length)) { e.preventDefault(); e.returnValue = ''; }
     saveSession();
   });
   commands.onRun(() => setTimeout(refreshChrome, 0));
@@ -195,6 +271,7 @@ function startPage() {
 const DOC_TITLES = {
   tags: ['Tags List', 'tags'], alarms: ['Alarms', 'alarm'], settings: ['Project Settings', 'settings'],
   data: ['Historians & Data Loggers', 'historian'], xref: ['Cross Reference', 'xref'],
+  users: ['Users', 'users'],
 };
 
 function openDoc(docId) {
@@ -220,6 +297,10 @@ function openDoc(docId) {
   }
   const [title, ic] = DOC_TITLES[docId] ?? [];
   if (!title) return null;
+  if (docId === 'users') {
+    if (!isAdmin()) { toast('Only administrators manage studio users', { kind: 'warn' }); return null; }
+    return docs.open(docId, { title, icon: ic, create: (holder) => createUsersDoc(holder, { api, me: () => me }) });
+  }
   const factory = { tags: createTagsDoc, alarms: createAlarmsDoc, settings: createSettingsDoc, data: createDataDoc, xref: createXrefDoc }[docId];
   return docs.open(docId, { title, icon: ic, create: (holder) => factory(holder, ctx) });
 }
@@ -438,6 +519,7 @@ function sendPart(part, value, version) {
  * on disk (and reload), instead of silently losing the other change.
  */
 async function savePart(part) {
+  if (!canSave()) throw new Error(`${me?.name ?? 'You'} may not save: the ${me?.role ?? 'current'} role is read only`);
   const value = store.getPart(part);
   let res;
   try {
@@ -731,11 +813,11 @@ function registerCommands() {
   const undoPart = () => activePart();
 
   c({ id: 'file.new-screen', group: 'File', label: 'New Screen…', icon: 'new', kbd: 'Ctrl+Alt+N', run: newScreen });
-  c({ id: 'file.save', group: 'File', label: 'Save', icon: 'save', kbd: 'Ctrl+S', global: true, run: saveActive, enabled: () => !saving && (activePart() ? store.isDirty(activePart()) || store.pending().deleted.length > 0 : store.pending().dirty.length > 0) });
-  c({ id: 'file.save-all', group: 'File', label: 'Save All', icon: 'saveall', kbd: 'Ctrl+Shift+S', global: true, run: saveAll, enabled: () => !saving && (store.pending().dirty.length + store.pending().deleted.length) > 0 });
+  c({ id: 'file.save', group: 'File', label: 'Save', icon: 'save', kbd: 'Ctrl+S', global: true, run: saveActive, enabled: () => canSave() && !saving && (activePart() ? store.isDirty(activePart()) || store.pending().deleted.length > 0 : store.pending().dirty.length > 0) });
+  c({ id: 'file.save-all', group: 'File', label: 'Save All', icon: 'saveall', kbd: 'Ctrl+Shift+S', global: true, run: saveAll, enabled: () => canSave() && !saving && (store.pending().dirty.length + store.pending().deleted.length) > 0 });
   c({ id: 'file.reload', group: 'File', label: 'Reload Project from Disk', icon: 'open', run: reloadFromDisk });
   c({ id: 'file.export', group: 'File', label: 'Export Project as JSON', icon: 'source', run: exportJson, title: 'Download the working copy (the same shape as GET /api/bundle)' });
-  c({ id: 'run.start', group: 'Run', label: 'Save and Run', icon: 'run', kbd: 'F5', run, title: 'Saves all documents and opens the HMI in a new tab' });
+  c({ id: 'run.start', group: 'Run', label: 'Save and Run', icon: 'run', kbd: 'F5', run, enabled: canSave, title: 'Saves all documents and opens the HMI in a new tab' });
   c({ id: 'run.stop', group: 'Run', label: 'Stop Live Values', icon: 'stop', kbd: 'Shift+F5', run: () => { live.setEnabled(false); store.log('Live values paused'); }, enabled: () => live?.enabled && live?.alive });
   c({ id: 'tools.hmi', group: 'Tools', label: 'Open HMI (without saving)', icon: 'screen', run: () => window.open('/hmi/', 'moviclone-hmi') });
 
@@ -817,6 +899,9 @@ function registerCommands() {
   c({ id: 'doc.close', group: 'Window', label: 'Close Document', kbd: 'Ctrl+F4', run: () => { const a = docs.active(); if (a) docs.close(a.id); }, enabled: () => Boolean(docs?.active()) });
   c({ id: 'doc.next', group: 'Window', label: 'Next Document', kbd: 'Ctrl+PageDown', run: () => docs.cycle(1) });
   c({ id: 'doc.prev', group: 'Window', label: 'Previous Document', kbd: 'Ctrl+PageUp', run: () => docs.cycle(-1) });
+  c({ id: 'user.password', group: 'User', label: 'Change Password…', run: changePassword });
+  c({ id: 'user.users', group: 'User', label: 'Manage Users…', icon: 'users', run: () => openDoc('users'), enabled: isAdmin });
+  c({ id: 'user.sign-out', group: 'User', label: 'Sign Out', run: signOut });
   c({ id: 'help.shortcuts', group: 'Help', label: 'Keyboard Shortcuts', run: () => bottom.show('commands') });
   c({ id: 'help.about', group: 'Help', label: 'About Moviclone Studio', run: () => toast('Moviclone Studio — a web designer for Moviclone projects. All artwork is original.', { kind: 'info', timeout: 6000 }) });
 }
