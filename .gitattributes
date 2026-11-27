@@ -1,0 +1,19 @@
+# Text is stored and checked out with LF on every OS (Rust, JS, TOML, Markdown, HTML, CSS).
+* text=auto eol=lf
+
+# Windows scripts keep CRLF in the working copy.
+*.ps1 text eol=crlf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Binary files: never converted or diffed as text.
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.redb binary
+
+# Movicon test fixtures are kept byte-for-byte as Movicon wrote them
+# (Main.references is UTF-16), so the importer is tested on real input.
+crates/import-movicon/tests/fixtures/** -text
