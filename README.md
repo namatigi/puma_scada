@@ -137,6 +137,15 @@ Passwords can't be stored in these files: `password` only accepts a
 `secret://name` reference (resolved from `MOVICLONE_SECRET_<NAME>`), and anything
 else fails to load.
 
+## Desktop app (Windows, macOS)
+
+[`desktop/`](desktop/README.md) packages the studio, the HMI and the runtime
+as one installable program (Tauri): a launcher with recent projects, Open,
+New and Import Movicon.NExT, the studio in the app's window, the HMI in a
+second window, and the simulator on or off from the Runtime menu. Installers
+(`.msi`, setup `.exe`, universal `.dmg`) come from the *Desktop installers*
+GitHub Actions workflow when a `v*` tag is pushed.
+
 ## Users and sign-in
 
 The HMI and the studio need a signed-in user; one sign-in covers both (a cookie

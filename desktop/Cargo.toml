@@ -1,0 +1,41 @@
+[package]
+name = "moviclone-desktop"
+description = "Moviclone Studio for Windows and macOS: the studio, the HMI and the runtime in one installable app"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.88"
+publish = false
+
+# A workspace of its own: Tauri's dependency tree (and, on Linux, WebKitGTK)
+# stays out of the main workspace's builds and tests.
+[workspace]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+moviclone-rt = { path = "../crates/rt" }
+moviclone-model = { path = "../crates/model" }
+moviclone-import-movicon = { path = "../crates/import-movicon" }
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
+tauri-plugin-opener = "2"
+tokio = { version = "1", features = ["time", "sync"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+anyhow = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[profile.release]
+codegen-units = 1
+lto = true
+strip = true
+
+# Slow unoptimized (see the main workspace's Cargo.toml).
+[profile.dev.package.redb]
+opt-level = 2
+[profile.dev.package.argon2]
+opt-level = 3
+[profile.dev.package.blake2]
+opt-level = 3

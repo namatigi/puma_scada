@@ -2,3 +2,5 @@
 /out
 /.playwright-mcp
 /demo/data
+/desktop/target
+/desktop/gen

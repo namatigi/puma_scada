@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Moviclone Studio</title>
+  <link rel="stylesheet" href="launcher.css">
+</head>
+<body>
+  <main class="launch">
+    <header class="brand">
+      <div class="mark" aria-hidden="true"></div>
+      <div>
+        <h1>Moviclone Studio</h1>
+        <p class="sub">Design and run SCADA/HMI projects. <span id="version"></span></p>
+      </div>
+    </header>
+
+    <section class="actions" aria-label="Start">
+      <button type="button" class="action primary" id="open">
+        <b>Open Project…</b><span>A folder with project.toml</span>
+      </button>
+      <button type="button" class="action" id="new">
+        <b>New Project…</b><span>An empty folder; one blank screen to start</span>
+      </button>
+      <button type="button" class="action" id="import">
+        <b>Import Movicon.NExT…</b><span>Convert a .UFProject, with a report of what was mapped</span>
+      </button>
+    </section>
+
+    <label class="sim">
+      <input type="checkbox" id="simulate">
+      <span><b>Use the simulator</b> — run against the built-in Modbus simulator instead of the plant's devices (Runtime menu)</span>
+    </label>
+
+    <section aria-labelledby="recent-title">
+      <h2 id="recent-title">Recent projects</h2>
+      <ul id="recent" class="recent"></ul>
+    </section>
+
+    <p id="status" class="status" role="status"></p>
+  </main>
+  <script src="launcher.js"></script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "The launcher page (bundled with the app) may call the app's project commands. The studio and HMI pages come from the app's own runtime on 127.0.0.1 and get no access to the app.",
+  "windows": ["main"],
+  "permissions": ["core:default"]
+}

@@ -1,5 +1,7 @@
 [workspace]
 resolver = "2"
+# desktop/ (the Tauri app) is a workspace of its own.
+exclude = ["desktop"]
 members = [
     "crates/model",
     "crates/check",
