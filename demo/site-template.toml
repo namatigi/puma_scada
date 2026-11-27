@@ -1,0 +1,81 @@
+# How a depot's SCADA is built from the OXOAFRICA project (demo/oxoafrica)
+# with only the flow meters the depot has: the desktop app's first-start setup
+# and `movi site` use it.
+#
+# For every meter that is NOT chosen, its tags (names starting with
+# tag_prefix, and any other tag read from its Modbus stations), screens,
+# historians, loggers, Modbus stations and the listed screen elements are
+# removed. So is anything else that still refers to a removed tag or screen
+# (alarms on its tags, displays, valves, buttons that open its screens).
+# Meters keep their numbers (FM_02 stays FM_02), so the Modbus unit ids match
+# the meters on site.
+
+template = "oxoafrica"
+
+[[meter]]
+key = "hfo"
+product = "HFO"
+color = "#151515"
+tag_prefix = "FM_01_"
+screens = ["FM_01", "FM01_Trend"]
+historians = ["FM01"]
+loggers = ["FM01"]
+stations = ["Flow_Meter_1"]
+
+[meter.elements]
+# Meter body and the untagged pipe fittings on its line.
+Manifold = ["ContentControl24", "ContentControl25", "ContentControl26", "ContentControl27"]
+
+[[meter]]
+key = "gasoil"
+product = "Gasoil"
+color = "#555555"
+tag_prefix = "FM_02_"
+screens = ["FM_02", "FM02_Trend"]
+historians = ["FM02"]
+loggers = ["FM02"]
+stations = ["Flow_Meter_2"]
+
+[meter.elements]
+Manifold = ["ContentControl21", "ContentControl22", "ContentControl23", "ContentControl15", "ContentControl20", "ContentControl43", "ContentControl45"]
+
+[[meter]]
+key = "jet"
+product = "JET A-1"
+color = "#F4F4F4"
+tag_prefix = "FM_03_"
+screens = ["FM_03", "FM03_Trend"]
+historians = ["FM03"]
+loggers = ["FM03"]
+stations = ["Flow_Meter_3"]
+
+[meter.elements]
+# Also the bypass loop (its pipes and two hand valves are not bound to a tag).
+Manifold = [
+  "ContentControl17", "ContentControl19", "ContentControl18", "ContentControl16", "ContentControl44",
+  "ContentControl32", "ContentControl36", "ContentControl37", "ContentControl38",
+  "ContentControl34", "ContentControl39", "Pipeline10", "Pipeline9", "Pipeline08",
+]
+
+[[meter]]
+key = "gasoline"
+product = "Gasoline"
+color = "#FF4D4D"
+tag_prefix = "FM_04_"
+screens = ["FM_04", "FM04_Trend"]
+historians = ["FM04"]
+loggers = ["FM04"]
+stations = ["Flow_Meter_4"]
+
+[meter.elements]
+Manifold = [
+  "ContentControl33", "ContentControl35", "ContentControl06", "ContentControl04", "ContentControl05",
+  "ContentControl08", "ContentControl11", "ContentControl02", "ContentControl03", "ContentControl29",
+  "ContentControl30", "ContentControl07", "ContentControl09", "ContentControl10", "ContentControl12",
+]
+
+# The "… Trend & Log" buttons are stacked in the bottom-right corner; the ones
+# that remain move down into the lowest places, in this order.
+[[restack]]
+screen = "Manifold"
+elements = ["ContentControl1", "ContentControl4", "ContentControl5", "ContentControl6"]

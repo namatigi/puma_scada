@@ -51,6 +51,9 @@ impl Project {
 #[serde(deny_unknown_fields)]
 pub struct ProjectMeta {
     pub name: String,
+    /// Where the project runs, e.g. the depot name; shown in the HMI's top bar.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub site: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[serde(default = "default_culture")]
@@ -72,6 +75,7 @@ impl Default for ProjectMeta {
     fn default() -> Self {
         Self {
             name: "untitled".into(),
+            site: None,
             description: None,
             culture: default_culture(),
             main_screen: None,

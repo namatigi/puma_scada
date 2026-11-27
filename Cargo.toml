@@ -14,6 +14,7 @@ members = [
     "crates/historian",
     "crates/alarms",
     "crates/auth",
+    "crates/site",
     "crates/studio",
     "crates/rt",
 ]
@@ -35,6 +36,7 @@ moviclone-historian = { path = "crates/historian" }
 moviclone-alarms = { path = "crates/alarms" }
 moviclone-studio = { path = "crates/studio" }
 moviclone-auth = { path = "crates/auth" }
+moviclone-site = { path = "crates/site" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 toml = "0.8"

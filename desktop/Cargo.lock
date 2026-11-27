@@ -2379,6 +2379,7 @@ dependencies = [
  "moviclone-import-movicon",
  "moviclone-model",
  "moviclone-rt",
+ "moviclone-site",
  "serde",
  "serde_json",
  "tauri",
@@ -2490,6 +2491,17 @@ dependencies = [
  "tokio",
  "tokio-modbus",
  "tracing",
+]
+
+[[package]]
+name = "moviclone-site"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "moviclone-model",
+ "serde",
+ "serde_json",
+ "toml 0.8.2",
 ]
 
 [[package]]

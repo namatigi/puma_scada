@@ -125,7 +125,7 @@ diagnostics). Details: `crates/rt/src/reload.rs`.
 ## Project layout
 
 ```text
-project.toml          name, main screen, sampling, report names, origin
+project.toml          name, site (depot, shown in the HMI top bar), main screen, sampling, report names, origin
 tags.toml             [[tag]] name, type, access, address, historian
 alarms.toml           [[alarm]] name, tag, when, limit, deadband, delay_s, severity, message
 data.toml             [[database]] [[historian]] [[logger]]
@@ -145,6 +145,26 @@ New and Import Movicon.NExT, the studio in the app's window, the HMI in a
 second window, and the simulator on or off from the Runtime menu. Installers
 (`.msi`, setup `.exe`, universal `.dmg`) come from the *Desktop installers*
 GitHub Actions workflow when a `v*` tag is pushed.
+
+## Depot projects (only the meters on site)
+
+A depot's SCADA is built from the OXOAFRICA project with only the flow meters
+the depot has: the desktop app's first-start setup asks for the depot name and
+the meters, or from the command line:
+
+```powershell
+.\target\release\movi.exe site --list
+.\target\release\movi.exe site --depot "Kurasini Depot" --meters gasoline,gasoil -o D:\Projects\Kurasini
+```
+
+[`demo/site-template.toml`](demo/site-template.toml) says what belongs to each
+meter (HFO FM_01, Gasoil FM_02, JET A-1 FM_03, Gasoline FM_04): its tags,
+panel and trend screens, alarms, historian, logger, Modbus station and its line
+on Manifold. The chosen meters keep their place in the existing layout; the
+others are left out, and the remaining *Trend & Log* buttons move down. Meters
+keep their numbers, so the Modbus unit ids still match the devices. The depot
+name goes into `project.toml` (`site`) and leads the HMI's top bar; it can be
+changed in the studio (Project Settings › Site / depot).
 
 ## Users and sign-in
 

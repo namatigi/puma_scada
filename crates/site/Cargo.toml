@@ -1,0 +1,17 @@
+[package]
+name = "moviclone-site"
+description = "Builds a depot's project from a template with only the flow meters the depot has"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+moviclone-model.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+toml.workspace = true
+anyhow.workspace = true
+
+[dev-dependencies]
+moviclone-check.workspace = true
+tempfile = "3"

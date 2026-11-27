@@ -45,6 +45,7 @@ export function createSettingsDoc(root, ctx) {
       h('h2', { text: 'Project Settings' }),
       h('div', { class: 'st-form' },
         ...field('Project name', input(m.name, (v) => { if (!v.trim()) { store.log('Project name must not be empty', 'warn'); render(); return; } edit('Project name', (x) => { x.name = v.trim(); }); })),
+        ...field('Site / depot', input(m.site ?? '', (v) => edit('Site name', (x) => { if (v.trim()) x.site = v.trim(); else delete x.site; })), 'Where the project runs, e.g. the depot name. Shown first in the HMI top bar.'),
         ...field('Description', desc),
         ...field('Culture', input(m.culture, (v) => edit('Culture', (x) => { x.culture = v.trim() || 'en-us'; }), { list: 'st-cultures' }), 'Number and date format for displays, e.g. en-us, it-it, de-de.'),
         ...field('Startup screen', main)),

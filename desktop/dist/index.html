@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="launcher.css">
 </head>
 <body>
-  <main class="launch">
+  <main class="launch" id="home">
     <header class="brand">
       <div class="mark" aria-hidden="true"></div>
       <div>
@@ -18,11 +18,14 @@
     </header>
 
     <section class="actions" aria-label="Start">
-      <button type="button" class="action primary" id="open">
+      <button type="button" class="action primary" id="depot">
+        <b>Set Up a Depot…</b><span>Depot name and the meters on site; builds its SCADA</span>
+      </button>
+      <button type="button" class="action" id="open">
         <b>Open Project…</b><span>A folder with project.toml</span>
       </button>
       <button type="button" class="action" id="new">
-        <b>New Project…</b><span>An empty folder; one blank screen to start</span>
+        <b>New Blank Project…</b><span>An empty folder; one blank screen to start</span>
       </button>
       <button type="button" class="action" id="import">
         <b>Import Movicon.NExT…</b><span>Convert a .UFProject, with a report of what was mapped</span>
@@ -40,6 +43,54 @@
     </section>
 
     <p id="status" class="status" role="status"></p>
+  </main>
+
+  <main class="launch wizard" id="setup" hidden aria-labelledby="setup-title">
+    <header class="brand">
+      <div class="mark" aria-hidden="true"></div>
+      <div>
+        <h1 id="setup-title">Set up the depot</h1>
+        <p class="sub">Moviclone builds the depot's SCADA from the meters it has.</p>
+      </div>
+    </header>
+
+    <ol class="steps" aria-label="Steps">
+      <li data-step="1">Depot</li>
+      <li data-step="2">Meters</li>
+      <li data-step="3">Location</li>
+    </ol>
+
+    <form id="setup-form" novalidate>
+      <section class="step" data-step="1">
+        <label class="field">
+          <span>Depot name</span>
+          <input id="depot-name" maxlength="80" autocomplete="off" spellcheck="false" placeholder="e.g. Kurasini Depot" required>
+        </label>
+        <p class="hint">Shown at the top of every HMI screen.</p>
+      </section>
+
+      <section class="step" data-step="2" hidden>
+        <p class="hint">Tick the flow meters installed at <b id="depot-echo"></b>. Each one keeps its line, meter, valves, panel and trend screen; the others are left out.</p>
+        <div id="meters" class="meters" role="group" aria-label="Meters at the depot"></div>
+      </section>
+
+      <section class="step" data-step="3" hidden>
+        <div class="field">
+          <span>The project is saved in</span>
+          <div class="where"><code id="where"></code><button type="button" class="link" id="change-where">Change…</button></div>
+        </div>
+        <div class="summary" id="summary"></div>
+      </section>
+
+      <p id="setup-status" class="status" role="status"></p>
+
+      <div class="wizard-actions">
+        <button type="button" class="btn" id="setup-cancel">Cancel</button>
+        <span class="grow"></span>
+        <button type="button" class="btn" id="setup-back">Back</button>
+        <button type="submit" class="btn primary" id="setup-next">Next</button>
+      </div>
+    </form>
   </main>
   <script src="launcher.js"></script>
 </body>

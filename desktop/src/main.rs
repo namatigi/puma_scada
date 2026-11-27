@@ -65,7 +65,19 @@ fn main() {
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![launcher_state, open_project_dialog, open_recent, forget_recent, new_project, import_movicon, set_simulate])
+        .invoke_handler(tauri::generate_handler![
+            launcher_state,
+            open_project_dialog,
+            open_recent,
+            forget_recent,
+            new_project,
+            import_movicon,
+            set_simulate,
+            site_template,
+            choose_folder,
+            create_depot,
+            skip_setup
+        ])
         .setup(|app| {
             let handle = app.handle().clone();
             init_logging(&handle);
@@ -141,6 +153,16 @@ fn web_dir(app: &AppHandle) -> PathBuf {
         Ok(d) if d.join("studio").is_dir() => d,
         // `cargo run` in desktop/: the repository's web folder.
         _ => Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("web"),
+    }
+}
+
+/// The bundled site template (`template/site-template.toml`), or the
+/// repository's demo when running from source.
+fn site_manifest(app: &AppHandle) -> PathBuf {
+    let bundled = app.path().resource_dir().map(|d| d.join("template").join("site-template.toml"));
+    match bundled {
+        Ok(p) if p.is_file() => p,
+        _ => Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("demo").join("site-template.toml"),
     }
 }
 
@@ -356,7 +378,8 @@ fn build_menu(app: &AppHandle) -> tauri::Result<Menu<Wry>> {
     };
     let mut project = SubmenuBuilder::new(app, "Project")
         .item(&item("open", "Open Project…", Some("CmdOrCtrl+O"))?)
-        .item(&item("new", "New Project…", Some("CmdOrCtrl+Shift+N"))?)
+        .item(&item("depot", "Set Up a Depot…", None)?)
+        .item(&item("new", "New Blank Project…", Some("CmdOrCtrl+Shift+N"))?)
         .item(&item("import", "Import Movicon.NExT Project…", None)?)
         .separator()
         .item(&item("close", "Close Project", None)?)
@@ -416,6 +439,18 @@ fn on_menu(app: &AppHandle, id: &str) {
         "open" => spawn_action(app, "The project could not be opened", |a| async move { action_open(&a).await }),
         "new" => spawn_action(app, "The project could not be created", |a| async move { action_new(&a).await }),
         "import" => spawn_action(app, "The Movicon project could not be imported", |a| async move { action_import(&a).await }),
+        "depot" => {
+            // The launcher holds the setup; leave the open project first.
+            let app = app.clone();
+            tauri::async_runtime::spawn(async move {
+                if may_switch(&app).await {
+                    close(&app).await;
+                    if let Some(w) = app.get_webview_window(MAIN) {
+                        let _ = w.eval("setTimeout(() => window.showSetup && window.showSetup(), 400)");
+                    }
+                }
+            });
+        }
         "close" => {
             let app = app.clone();
             tauri::async_runtime::spawn(async move {
@@ -500,6 +535,8 @@ struct RecentProject {
 struct LauncherState {
     version: String,
     simulate: bool,
+    /// First start: show the depot setup.
+    setup: bool,
     recent: Vec<RecentProject>,
 }
 
@@ -509,6 +546,7 @@ fn launcher_state(app: AppHandle) -> LauncherState {
     LauncherState {
         version: app.package_info().version.to_string(),
         simulate: s.simulate,
+        setup: !s.setup_done && s.recent.is_empty(),
         recent: s
             .recent
             .iter()
@@ -546,4 +584,72 @@ async fn import_movicon(app: AppHandle) -> Result<bool, String> {
 fn set_simulate(app: AppHandle, on: bool) {
     app.state::<AppState>().update_settings(|s| s.simulate = on);
     refresh_menu(&app, None);
+}
+
+// ---------------------------------------------------------------- depot setup (first start)
+
+#[derive(Serialize)]
+struct TemplateMeter {
+    key: String,
+    product: String,
+    color: String,
+    tag_prefix: String,
+}
+
+#[derive(Serialize)]
+struct SiteTemplate {
+    meters: Vec<TemplateMeter>,
+    /// Where a depot's project goes unless the user picks another folder.
+    projects_dir: String,
+}
+
+#[tauri::command]
+fn site_template(app: AppHandle) -> Result<SiteTemplate, String> {
+    let manifest = moviclone_site::Manifest::load(&site_manifest(&app)).map_err(|e| format!("{e:#}"))?;
+    let docs = app.path().document_dir().or_else(|_| app.path().home_dir()).map_err(|e| e.to_string())?;
+    Ok(SiteTemplate {
+        meters: manifest
+            .meters
+            .into_iter()
+            .map(|m| TemplateMeter { key: m.key, product: m.product, color: m.color, tag_prefix: m.tag_prefix })
+            .collect(),
+        projects_dir: docs.join("Moviclone").to_string_lossy().into_owned(),
+    })
+}
+
+#[tauri::command]
+async fn choose_folder(app: AppHandle) -> Option<String> {
+    pick_folder(&app, "Where to keep the depot's project").await.map(|p| p.to_string_lossy().into_owned())
+}
+
+/// Builds the depot's SCADA with the chosen meters into `parent/<depot>` and opens it.
+#[tauri::command]
+async fn create_depot(app: AppHandle, depot: String, meters: Vec<String>, parent: String) -> Result<bool, String> {
+    if depot.trim().is_empty() {
+        return Err("Enter the depot name.".into());
+    }
+    if meters.is_empty() {
+        return Err("Choose at least one meter.".into());
+    }
+    let out = PathBuf::from(&parent).join(projects::folder_name(&depot));
+    if projects::is_project(&out) {
+        return Err(format!("{} already holds a project. Open it from Open Project, or choose another folder.", out.display()));
+    }
+    if !may_switch(&app).await {
+        return Ok(false);
+    }
+    let manifest = site_manifest(&app);
+    let o = out.clone();
+    tauri::async_runtime::spawn_blocking(move || projects::create_depot(&manifest, &depot, &meters, &o))
+        .await
+        .map_err(|e| e.to_string())?
+        .map_err(|e| format!("{e:#}"))?;
+    app.state::<AppState>().update_settings(|s| s.setup_done = true);
+    tracing::info!(project = %out.display(), "depot project built");
+    open(&app, out).await.map(|_| true)
+}
+
+#[tauri::command]
+fn skip_setup(app: AppHandle) {
+    app.state::<AppState>().update_settings(|s| s.setup_done = true);
 }

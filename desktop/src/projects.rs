@@ -15,12 +15,14 @@ pub struct Settings {
     pub recent: Vec<PathBuf>,
     /// Run projects against the built-in Modbus simulator instead of the devices.
     pub simulate: bool,
+    /// The first-start depot setup has been done (or skipped).
+    pub setup_done: bool,
 }
 
 impl Default for Settings {
     fn default() -> Self {
         // An engineering PC rarely reaches the plant's devices: simulate by default.
-        Self { recent: Vec::new(), simulate: true }
+        Self { recent: Vec::new(), simulate: true, setup_done: false }
     }
 }
 
@@ -126,6 +128,29 @@ pub fn import_movicon(source: &Path, out: &Path) -> Result<String> {
     Ok(imported.project.meta.name)
 }
 
+/// A folder name for a depot: its name without characters folders cannot have.
+pub fn folder_name(depot: &str) -> String {
+    let name: String = depot
+        .trim()
+        .chars()
+        .map(|c| if matches!(c, '<' | '>' | ':' | '"' | '/' | '\\' | '|' | '?' | '*') || c.is_control() { '-' } else { c })
+        .collect();
+    let name = name.trim_matches(|c: char| c == '.' || c == ' ').to_string();
+    if name.is_empty() { "Depot".into() } else { name }
+}
+
+/// Builds the depot's SCADA from the bundled site template into `out` (a new
+/// or empty folder): only the chosen meters, the depot name in the top bar.
+pub fn create_depot(manifest: &Path, depot: &str, meters: &[String], out: &Path) -> Result<()> {
+    if out.exists() {
+        ensure_empty(out)?;
+    }
+    std::fs::create_dir_all(out).with_context(|| format!("cannot create {}", out.display()))?;
+    let choice = moviclone_site::Choice { depot: depot.trim().to_string(), meters: meters.to_vec() };
+    moviclone_site::build_to(manifest, &choice, out)?;
+    Ok(())
+}
+
 /// A folder name for `dir`'s runtime data: readable, and unique per project path.
 pub fn data_key(dir: &Path) -> String {
     let path = dir.to_string_lossy().to_lowercase();
@@ -181,6 +206,26 @@ mod tests {
         let b = data_key(Path::new("C:/y/Plant"));
         assert_ne!(a, b);
         assert!(toml_name("culture = \"en-us\"\nname = \"OXOAFRICA SCADA\"\n").as_deref() == Some("OXOAFRICA SCADA"));
+    }
+
+    #[test]
+    fn depot_folder_names_are_safe() {
+        assert_eq!(folder_name("Kurasini Depot"), "Kurasini Depot");
+        assert_eq!(folder_name(" A/B: C? "), "A-B- C-");
+        assert_eq!(folder_name("..."), "Depot");
+    }
+
+    #[test]
+    fn a_depot_is_built_from_the_template() {
+        let dir = tempdir("depot");
+        let manifest = Path::new(env!("CARGO_MANIFEST_DIR")).join("../demo/site-template.toml");
+        let out = dir.join("Kurasini Depot");
+        create_depot(&manifest, "Kurasini Depot", &["gasoline".into(), "gasoil".into()], &out).unwrap();
+        let (p, _) = moviclone_model::load_project(&out).unwrap();
+        assert_eq!(p.meta.site.as_deref(), Some("Kurasini Depot"));
+        assert_eq!(p.screens.len(), 5);
+        assert!(create_depot(&manifest, "X", &["gasoline".into()], &out).is_err(), "not over an existing project");
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     fn tempdir(tag: &str) -> PathBuf {

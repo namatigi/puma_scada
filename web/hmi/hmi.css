@@ -183,3 +183,7 @@ button { font-family: inherit; }
 /* Viewers and guests: entry fields show they are locked. */
 .hmi-view-only .mc-editable { cursor: not-allowed; }
 @media (max-width: 720px) { .hmi-user-name { display: none; } }
+
+/* Site (depot) name leads in the top bar; the project name follows, dimmer. */
+.hmi-project-sub { margin-left: 8px; color: var(--mc-text-dim); font-weight: 400; font-size: 12px; }
+@media (max-width: 1100px) { .hmi-project-sub { display: none; } }

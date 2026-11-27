@@ -12,7 +12,7 @@ body { margin: 0; min-height: 100vh; display: flex; justify-content: center; pad
 h1 { margin: 0; font-size: 24px; font-weight: 600; }
 .sub { margin: 2px 0 0; color: var(--dim); }
 h2 { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--dim); margin: 28px 0 8px; }
-.actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.actions { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
 .action { display: flex; flex-direction: column; gap: 4px; text-align: left; padding: 14px 16px; min-height: 84px; border-radius: 6px; border: 1px solid var(--border); background: var(--panel); color: var(--text); font: inherit; cursor: pointer; }
 .action b { font-size: 14px; }
 .action span { color: var(--dim); }
@@ -37,3 +37,36 @@ h2 { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacin
 .status { min-height: 20px; margin-top: 18px; color: var(--dim); }
 .status.error { color: var(--bad); white-space: pre-wrap; }
 @media (max-width: 640px) { .actions { grid-template-columns: 1fr; } }
+
+/* Depot setup wizard */
+.wizard { width: min(720px, 100%); }
+.steps { display: flex; gap: 8px; list-style: none; margin: 0 0 22px; padding: 0; counter-reset: step; }
+.steps li { flex: 1; padding: 8px 12px; border-radius: 6px; background: var(--panel); border: 1px solid var(--border); color: var(--dim); counter-increment: step; }
+.steps li::before { content: counter(step) ". "; }
+.steps li.on { border-color: var(--accent); color: var(--text); }
+.steps li.done { color: var(--ok); }
+.field { display: flex; flex-direction: column; gap: 6px; color: var(--dim); }
+.field input { height: 40px; padding: 0 12px; font-family: inherit; font-size: 16px; color: var(--text); background: var(--panel); border: 1px solid var(--border); border-radius: 6px; outline: none; }
+.field input:focus { border-color: var(--accent); }
+.hint { color: var(--dim); margin: 8px 0 14px; }
+.hint b { color: var(--text); }
+.meters { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.meter { display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--panel); cursor: pointer; }
+.meter:hover { background: var(--raised); }
+.meter.on { border-color: var(--accent); background: var(--raised); }
+.meter input { width: 18px; height: 18px; accent-color: var(--accent); }
+.swatch { width: 28px; height: 28px; border-radius: 6px; border: 1px solid rgba(255,255,255,.25); flex: none; }
+.meter b { font-size: 15px; display: block; }
+.meter small { color: var(--dim); }
+.where { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--panel); }
+.where code { flex: 1; color: var(--text); font: 12px 'Cascadia Mono', Consolas, monospace; overflow-wrap: anywhere; }
+.link { border: 0; background: none; color: #4fb3ff; font: inherit; cursor: pointer; padding: 0; }
+.summary { margin-top: 16px; padding: 14px 16px; border-radius: 6px; background: var(--panel); border: 1px solid var(--border); color: var(--dim); line-height: 1.7; }
+.summary b { color: var(--text); }
+.wizard-actions { display: flex; gap: 8px; margin-top: 20px; }
+.wizard-actions .grow { flex: 1; }
+.btn { height: 36px; padding: 0 18px; border-radius: 6px; border: 1px solid var(--border); background: var(--raised); color: var(--text); font: inherit; cursor: pointer; }
+.btn:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent-2); border-color: var(--accent-2); color: #fff; font-weight: 600; }
+.btn:disabled { opacity: .5; cursor: progress; }
+@media (max-width: 640px) { .meters { grid-template-columns: 1fr; } }

@@ -5,12 +5,22 @@ An installable Moviclone Studio: the studio, the operator HMI and the runtime
 built with [Tauri](https://tauri.app). Nothing else has to be installed or
 started.
 
-- **Launcher**: recent projects, *Open Project…*, *New Project…* (an empty
-  folder; one blank 1920×1080 screen), *Import Movicon.NExT…* (a `.UFProject`
-  into an empty folder, with `IMPORT-REPORT.md`).
+- **First start: depot setup.** The first time the installed app opens it
+  asks for the **depot name** (shown at the top of every HMI screen), the
+  **meters installed at the depot** (HFO, Gasoil, JET A-1, Gasoline; any one to
+  four) and where to keep the project (`Documents\Moviclone\<depot>` unless
+  changed). It builds the depot's SCADA from the bundled OXOAFRICA template:
+  the chosen meters keep their lines, meters, valves, panels, trend screens,
+  alarms and history in the existing Manifold layout, and the others are left
+  out (see `demo/site-template.toml`). The project then opens in the studio.
+  *Skip for now* goes to the launcher; *Set Up a Depot…* (launcher or Project
+  menu) runs the setup again for another depot.
+- **Launcher**: recent projects, *Set Up a Depot…*, *Open Project…*, *New
+  Blank Project…* (an empty folder; one blank 1920×1080 screen), *Import
+  Movicon.NExT…* (a `.UFProject` into an empty folder, with `IMPORT-REPORT.md`).
 - **Studio**: the window shows the studio of the open project, served by the
   runtime inside the app on `127.0.0.1` (port 47801, or the next free one).
-- **Menus**: *Project* (open, new, import, close, show folder), *Runtime*
+- **Menus**: *Project* (set up a depot, open, new, import, close, show folder), *Runtime*
   (*Use the Simulator* on/off, *Open HMI Window* F6, HMI or studio in the
   browser, data folder, log file), *Help*. macOS also gets the usual app and
   Edit menus.

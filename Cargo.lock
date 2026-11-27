@@ -757,6 +757,7 @@ dependencies = [
  "moviclone-check",
  "moviclone-import-movicon",
  "moviclone-model",
+ "moviclone-site",
  "rpassword",
  "serde_json",
 ]
@@ -912,6 +913,19 @@ dependencies = [
  "tokio",
  "tokio-modbus",
  "tracing",
+]
+
+[[package]]
+name = "moviclone-site"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "moviclone-check",
+ "moviclone-model",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "toml",
 ]
 
 [[package]]

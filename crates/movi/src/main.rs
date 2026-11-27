@@ -5,6 +5,7 @@
 //! movi build  <folder>                        validate a project and plan polling
 //! movi bundle <folder> -o project.json        the project as one JSON document
 //! movi users  list|add|passwd|role|remove     HMI and studio sign-ins (<data>/users.toml)
+//! movi site   --depot NAME --meters a,b -o DIR a depot's project with only its meters
 //! ```
 
 use anyhow::{bail, Context, Result};
@@ -61,6 +62,24 @@ enum Cmd {
         #[arg(short, long, default_value = "-")]
         out: PathBuf,
     },
+    /// Build a depot's project from a site template with only the meters it has.
+    Site {
+        /// The template's manifest (e.g. demo/site-template.toml).
+        #[arg(long, default_value = "demo/site-template.toml")]
+        template: PathBuf,
+        /// Depot name, shown in the HMI's top bar.
+        #[arg(long, required_unless_present = "list")]
+        depot: Option<String>,
+        /// Meter keys, comma-separated (see `--list`), e.g. gasoline,gasoil.
+        #[arg(long, value_delimiter = ',', required_unless_present = "list")]
+        meters: Vec<String>,
+        /// Output folder (must be empty or new).
+        #[arg(short, long, required_unless_present = "list")]
+        out: Option<PathBuf>,
+        /// List the template's meters and exit.
+        #[arg(long)]
+        list: bool,
+    },
     /// Manage users (who may sign in to the HMI and the studio, and their roles).
     Users {
         /// The runtime's data folder (its --data; default `<project>/data`).
@@ -104,6 +123,7 @@ fn main() -> ExitCode {
         Cmd::Build { dir, plan, max_gap, deny_warnings } => build(&dir, plan, max_gap, deny_warnings),
         Cmd::Bundle { dir, out } => bundle(&dir, &out),
         Cmd::Users { data, action } => users_cmd(&data, action),
+        Cmd::Site { template, depot, meters, out, list } => site_cmd(&template, depot, meters, out, list),
     };
     match result {
         Ok(code) => code,
@@ -262,5 +282,36 @@ fn users_cmd(data: &Path, action: UsersCmd) -> Result<ExitCode> {
         }
     }
     users::save(&file, &list).map_err(anyhow::Error::msg)?;
+    Ok(ExitCode::SUCCESS)
+}
+
+// ---------------------------------------------------------------- site
+
+fn site_cmd(manifest: &Path, depot: Option<String>, meters: Vec<String>, out: Option<PathBuf>, list: bool) -> Result<ExitCode> {
+    let m = moviclone_site::Manifest::load(manifest)?;
+    if list {
+        for meter in &m.meters {
+            println!("{:<10} {:<10} tags {}*", meter.key, meter.product, meter.tag_prefix);
+        }
+        return Ok(ExitCode::SUCCESS);
+    }
+    let out = out.context("--out is required")?;
+    if out.join(moviclone_model::io::PROJECT_FILE).exists() {
+        bail!("{} already contains a project", out.display());
+    }
+    let depot = depot.context("--depot is required")?;
+    let choice = moviclone_site::Choice { depot, meters: meters.iter().map(|s| s.trim().to_lowercase()).collect() };
+    let project = moviclone_site::build_to(manifest, &choice, &out)?;
+    println!(
+        "Built {} for {} in {}: {} tags, {} screens, {} alarms",
+        project.meta.name,
+        project.meta.site.as_deref().unwrap_or("-"),
+        out.display(),
+        project.tags.len(),
+        project.screens.len(),
+        project.alarms.len()
+    );
+    println!("
+Next: movi build {}", out.display());
     Ok(ExitCode::SUCCESS)
 }

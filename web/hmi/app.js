@@ -79,7 +79,7 @@ async function boot() {
     onScreens: () => navigate('!screens'),
     onAlarms: () => navigate('!alarms'),
   });
-  topbar.setProject(state.project.meta?.name ?? 'Project');
+  topbar.setProject(state.project.meta?.name ?? 'Project', state.project.meta?.site);
   if (!MOCK) topbar.setUser(state.me, { onSignIn: () => signInAgain({ fresh: true }), onPassword: changePassword, onSignOut: signOut });
   panels = createPanels(document.getElementById('panels'), { viewOptions, onChange: syncSubscriptions });
 
@@ -425,7 +425,7 @@ async function reloadProject() {
     teardown();
     route();
     openPanels.forEach((n) => { const sc = findScreen(n); if (sc) panels.open(sc); });
-    topbar.setProject(p.meta?.name ?? 'Project');
+    topbar.setProject(p.meta?.name ?? 'Project', p.meta?.site);
     toast('Project updated', { kind: 'ok' });
   } catch (err) {
     toast(`Project reload failed: ${err.message}`, { kind: 'error' });

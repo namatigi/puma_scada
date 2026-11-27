@@ -35,6 +35,7 @@ function icon(name) {
 export function createTopBar(root, actions) {
   const hotzone = document.getElementById('topbar-hotzone');
   const project = h('span', { class: 'hmi-project' });
+  const projectSub = h('span', { class: 'hmi-project-sub' });
   const screenName = h('span', { class: 'hmi-screen-name' });
   const btn = (name, label, fn) => h('button', { type: 'button', class: 'hmi-tb-btn', title: label, 'aria-label': label, onclick: fn }, icon(name));
   const sevEls = Object.fromEntries(SEVERITIES.map((sv) => [sv, h('span', { class: `hmi-sev mc-sev-${sv}`, title: `${sv} alarms` }, h('b', { text: '0' }))]));
@@ -58,7 +59,7 @@ export function createTopBar(root, actions) {
   root.append(
     h('div', { class: 'hmi-tb-left' },
       h('span', { class: 'hmi-logo', 'aria-hidden': 'true' }),
-      h('span', { class: 'hmi-brand' }, project, actions.mock ? h('span', { class: 'hmi-sim', text: 'SIMULATION', title: 'Values are simulated in the browser (?mock)' }) : null),
+      h('span', { class: 'hmi-brand' }, project, projectSub, actions.mock ? h('span', { class: 'hmi-sim', text: 'SIMULATION', title: 'Values are simulated in the browser (?mock)' }) : null),
       btn('back', 'Back', actions.onBack),
       btn('home', 'Main screen', actions.onHome),
       btn('grid', 'Screens', actions.onScreens),
@@ -149,9 +150,13 @@ export function createTopBar(root, actions) {
       userRole.dataset.role = me?.role ?? 'guest';
       userBtn.title = me ? `Signed in as ${me.name} (${me.role})` : 'Watching without signing in. Sign in to write values or acknowledge alarms.';
     },
-    setProject(name) {
-      project.textContent = name;
-      document.title = `${name} · Moviclone HMI`;
+    /** The project name, and the site (depot) it runs at, which leads when set. */
+    setProject(name, site) {
+      project.textContent = site || name;
+      projectSub.textContent = site ? name : '';
+      projectSub.hidden = !site;
+      project.title = site ? `${site} · ${name}` : name;
+      document.title = `${site ? `${site} · ` : ''}${name} · Moviclone HMI`;
     },
     setScreen(name) { screenName.textContent = name; },
     /** Auto-hide over full-window screens; always visible on pages. */

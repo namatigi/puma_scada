@@ -57,6 +57,7 @@ pub fn import(path: &Path) -> Result<Imported> {
     let num = |k: &str, d: u32| child_text(root, k).and_then(|v| v.parse().ok()).unwrap_or(d);
     let mut meta = ProjectMeta {
         name: name.clone(),
+        site: None,
         description: child_text(root, "description").map(str::to_string),
         culture: child_text(root, "cultureName").unwrap_or("en-us").to_string(),
         main_screen: None,

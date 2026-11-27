@@ -28,7 +28,9 @@
       "icons/icon.ico"
     ],
     "resources": {
-      "../web/": "web/"
+      "../web/": "web/",
+      "../demo/oxoafrica/": "template/oxoafrica/",
+      "../demo/site-template.toml": "template/site-template.toml"
     },
     "windows": {
       "webviewInstallMode": {

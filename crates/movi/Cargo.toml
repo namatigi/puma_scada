@@ -14,3 +14,4 @@ anyhow.workspace = true
 serde_json.workspace = true
 rpassword = "7"
 moviclone-auth.workspace = true
+moviclone-site.workspace = true
