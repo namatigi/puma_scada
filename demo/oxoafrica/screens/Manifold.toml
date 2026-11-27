@@ -650,7 +650,7 @@ screen = "FM_04"
 [[element]]
 id = "EditDisplay4"
 kind = "display"
-tag = "FM_01_Volume_Rate"
+tag = "FM_04_MassFlow"
 unit = "mTon/hr"
 format = "#0.0"
 editable = true
@@ -910,7 +910,7 @@ rotation = 90.0
 [[element]]
 id = "EditDisplay3"
 kind = "display"
-tag = "FM_02_MassFlow"
+tag = "FM_03_MassFlow"
 unit = "mTon/hr"
 format = "#0.0"
 editable = true
@@ -923,7 +923,7 @@ rotation = 315.0
 [[element]]
 id = "EditDisplay2"
 kind = "display"
-tag = "FM_03_MassFlow"
+tag = "FM_02_MassFlow"
 unit = "mTon/hr"
 format = "#0.0"
 editable = true
@@ -936,7 +936,7 @@ rotation = 315.0
 [[element]]
 id = "EditDisplay5"
 kind = "display"
-tag = "FM_04_MassFlow"
+tag = "FM_01_MassFlow"
 unit = "mTon/hr"
 format = "#0.0"
 editable = true

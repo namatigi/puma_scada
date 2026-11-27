@@ -93,7 +93,7 @@ the project has an empty `FM_05` panel for it. The demo removes them:
 The simulator, symbol map and studio Symbol Library know four products:
 Gasoline, JET A-1, Gasoil and HFO.
 
-### 4. Product flow in the Manifold pipes and valves
+### 4. Product flow in the Manifold pipes, valves and displays
 
 Each pipe on Manifold is bound to the mass flow of the meter it belongs to and
 animates in that product's colour while the meter's mass flow is above zero:
@@ -112,6 +112,12 @@ upper gasoline header `Pipeline1` has `flow_reverse = true`). With no flow
 bypass loop (`Pipeline10`, `Pipeline9`, `Pipeline08`) is not animated because
 valve positions are not known. The imported binding of the gasoline lower header
 to `FM_04_START` was replaced.
+
+The four flow displays beside the meters were bound to the wrong meters in the
+original project (the display by Gasoline showed HFO, by JET A-1 Gasoil, by Gasoil
+JET A-1, and by HFO Gasoline's volume rate under a mTon/hr unit). Each now shows
+its own meter's mass flow: `EditDisplay5` `FM_01_MassFlow`, `EditDisplay2`
+`FM_02_MassFlow`, `EditDisplay3` `FM_03_MassFlow`, `EditDisplay4` `FM_04_MassFlow`.
 
 The hand valves on each product's line follow the same flow
 (`symbol = "movicon:Symbol952?open_above=0"` plus the line's tag): green while
