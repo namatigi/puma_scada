@@ -1,0 +1,15 @@
+[package]
+name = "moviclone-import-movicon"
+description = "Converts Movicon.NExT projects into the Moviclone model"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+moviclone-model.workspace = true
+roxmltree.workspace = true
+serde_json.workspace = true
+anyhow.workspace = true
+
+[dev-dependencies]
+moviclone-check.workspace = true

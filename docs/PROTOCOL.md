@@ -1,0 +1,75 @@
+# Moviclone runtime protocol
+
+One HTTP server (`moviclone-rt`, default `127.0.0.1:8080`) serves the HMI, the
+studio, a REST API and one WebSocket. All JSON. Timestamps are milliseconds since
+the Unix epoch (`ts`). Tag values are plain JSON: `null`, `true`, `12`, `1.5`, `"text"`.
+Quality is `"good" | "uncertain" | "bad"`.
+
+## Static files
+
+| Path | Serves |
+|---|---|
+| `/` | redirect to `/hmi/` |
+| `/hmi/…` | `web/hmi/` (operator runtime) |
+| `/studio/…` | `web/studio/` (editor) |
+| `/shared/…` | `web/shared/` (renderer, symbols, styles used by both) |
+
+## REST
+
+| Method & path | Owner crate | Response |
+|---|---|---|
+| `GET /api/bundle` | gateway | The whole project as JSON (`moviclone_model::Project` serialized with serde_json). Screens, tags, alarms, data config. |
+| `GET /api/values` | gateway | `{ "<tag>": {"v":…, "q":"good", "ts":…}, … }` for all tags |
+| `POST /api/write` | gateway | body `{"tag":"X","value":1,"mode":"set"}` → `{"ok":true}` or `{"ok":false,"error":"…"}` |
+| `GET /api/history?tags=A,B&from=MS&to=MS&points=600` | historian | `{"series":[{"tag":"A","points":[[ts,v],…]}]}` downsampled to at most `points` per tag (min/max preserving) |
+| `GET /api/history/table?source=FM01&from=MS&to=MS&limit=500` | historian | `{"columns":["time","tag","value","quality"],"rows":[[ts,"A",1.5,"good"],…]}` newest first |
+| `GET /api/alarms` | alarms | `{"alarms":[AlarmState…]}` (see below) |
+| `POST /api/alarms/{name}/ack` | alarms | `{"ok":true}` |
+| `POST /api/alarms/ack-all` | alarms | `{"ok":true}` |
+| `POST /api/alarms/{name}/shelve` body `{"minutes":30}` / `…/unshelve` | alarms | `{"ok":true}` |
+| `GET /api/alarms/journal?limit=200` | alarms | `{"events":[AlarmEvent…]}` newest first |
+| `GET /api/diagnostics` | gateway | `{"drivers":[{"name":…,"connected":bool,"requests":n,"errors":n,"last_error":…}], "uptime_s":…}` |
+| `GET /api/studio/project` | studio | `{"project":Project,"diagnostics":[Diagnostic…]}` |
+| `PUT /api/studio/screens/{name}` body Screen | studio | saves `screens/<name>.toml`; `{"ok":bool,"diagnostics":[…]}` |
+| `DELETE /api/studio/screens/{name}` | studio | removes the screen |
+| `PUT /api/studio/tags` body `[Tag…]` | studio | saves `tags.toml` |
+| `PUT /api/studio/alarms` body `[Alarm…]` | studio | saves `alarms.toml` |
+| `PUT /api/studio/meta` body ProjectMeta | studio | saves `project.toml` |
+
+`Diagnostic` JSON: `{"severity":"error|warning|note","code":"E011","file":"tags.toml","item":"tag \"X\"","message":"…"}`.
+
+`AlarmState` JSON:
+```json
+{"name":"FM01_HighFlow","tag":"FM_01_MassFlow","message":"…","severity":"high","area":"Manifold",
+ "state":"active-unacked","value":131.2,"since":1795740000000,"acked_by":null,"shelved_until":null}
+```
+`state` is one of `normal`, `active-unacked`, `active-acked`, `cleared-unacked`, `shelved`, `disabled` (ISA-18.2).
+
+`AlarmEvent` JSON: `{"ts":…,"name":"…","event":"activated|cleared|acked|shelved|unshelved","value":…,"user":null}`.
+
+## WebSocket `/ws`
+
+Client → server:
+```json
+{"op":"subscribe","tags":["FM_01_MassFlow","FM_01_Temp"]}      // adds to the subscription set
+{"op":"unsubscribe","tags":["FM_01_Temp"]}
+{"op":"subscribe-all"}                                          // studio watch window
+{"op":"write","id":7,"tag":"FM_01_Reset_Total","value":1,"mode":"pulse"}
+{"op":"ping"}
+```
+`mode` is `set | toggle | increase | decrease | pulse` (default `set`). A pulse writes `value`, holds it 500 ms, then writes the resting value (the opposite for a bool, zero for a number).
+
+Server → client:
+```json
+{"type":"hello","project":"Petrogas","main_screen":"Manifold","server_time":1795740000000,"version":"0.2.0"}
+{"type":"values","values":{"FM_01_MassFlow":{"v":12.5,"q":"good","ts":1795740000123}}}
+{"type":"write-result","id":7,"ok":true}
+{"type":"write-result","id":8,"ok":false,"error":"tag \"FM_01_Temp\" is read-only"}
+{"type":"alarms","alarms":[AlarmState…]}       // full list, sent on connect and whenever it changes
+{"type":"reload"}                               // project changed on disk (studio save); clients refetch /api/bundle
+{"type":"pong"}
+```
+After a `subscribe`, the server immediately sends current values of the newly
+subscribed tags, then only changes, batched at the project's `sampling.publish_ms`
+(250 ms for Petrogas). A tag that changes several times within one batch is sent
+once with its latest sample.

@@ -1,0 +1,32 @@
+kind = "modbus-tcp"
+description = 'Imported from Movicon channel "Flow Meters"'
+host = "169.254.100.100"
+port = 502
+poll_ms = 500
+timeout_ms = 5000
+keep_open = true
+
+[[station]]
+name = "Flow_Meter_1"
+unit_id = 1
+max_retries = 3
+
+[[station]]
+name = "Flow_Meter_2"
+unit_id = 2
+max_retries = 3
+
+[[station]]
+name = "Flow_Meter_3"
+unit_id = 3
+max_retries = 3
+
+[[station]]
+name = "Flow_Meter_4"
+unit_id = 4
+max_retries = 3
+
+[[station]]
+name = "Flow_Meter_5"
+unit_id = 5
+max_retries = 3

@@ -1,0 +1,13 @@
+[package]
+name = "moviclone-check"
+description = "Project validation and Modbus poll planning"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+moviclone-model.workspace = true
+
+[dev-dependencies]
+toml.workspace = true
+serde_json.workspace = true

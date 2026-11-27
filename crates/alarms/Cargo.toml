@@ -1,0 +1,21 @@
+[package]
+name = "moviclone-alarms"
+description = "Alarm engine: ISA-18.2 states, acknowledgement, shelving, journal"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+moviclone-model.workspace = true
+moviclone-tagdb.workspace = true
+tokio.workspace = true
+axum.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tracing.workspace = true
+anyhow.workspace = true
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["test-util"] }
+tower = { version = "0.5", features = ["util"] }
+http-body-util = "0.1"

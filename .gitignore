@@ -1,0 +1,4 @@
+/target
+/out
+/.playwright-mcp
+/demo/data

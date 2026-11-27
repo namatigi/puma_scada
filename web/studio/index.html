@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#2d2d30">
+  <title>Moviclone Studio</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23007acc'/%3E%3Cpath d='M6 22V10l5 7 5-7 5 7 5-7v12' fill='none' stroke='%23fff' stroke-width='3' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="../shared/theme.css">
+  <link rel="stylesheet" href="studio.css">
+</head>
+<body class="studio">
+  <div id="app" class="st-app">
+    <header class="st-titlebar">
+      <div class="st-logo" aria-hidden="true"></div>
+      <button id="quick-search" class="st-quick" type="button" title="Quick Search Commands (Ctrl+K)">
+        <span>Quick Search Commands</span><kbd>Ctrl+K</kbd>
+      </button>
+      <div id="window-title" class="st-window-title">Moviclone Studio</div>
+      <div id="runtime-pill" class="st-runtime-pill" title="Runtime connection">Runtime offline</div>
+    </header>
+    <nav id="menubar" class="st-menubar" role="menubar"></nav>
+    <div id="toolbar" class="st-toolbar" role="toolbar"></div>
+    <div class="st-workspace">
+      <div id="edge-left" class="st-edge st-edge-left"></div>
+      <aside id="flyout-left" class="st-dock st-flyout" hidden></aside>
+      <aside id="explorer" class="st-dock st-explorer"></aside>
+      <div class="st-splitter st-splitter-v" data-resize="explorer" data-side="left"></div>
+      <div class="st-center">
+        <div id="documents" class="st-documents"></div>
+        <div class="st-splitter st-splitter-h" data-resize="bottom"></div>
+        <section id="bottom" class="st-dock st-bottom"></section>
+      </div>
+      <div class="st-splitter st-splitter-v" data-resize="flyout-right" data-side="right"></div>
+      <aside id="flyout-right" class="st-dock st-flyout st-flyout-right"></aside>
+      <div class="st-splitter st-splitter-v" data-resize="properties" data-side="right"></div>
+      <aside id="properties" class="st-dock st-properties"></aside>
+      <div id="edge-right" class="st-edge st-edge-right"></div>
+    </div>
+    <footer id="statusbar" class="st-statusbar"></footer>
+  </div>
+  <div id="boot" class="st-boot"><div class="st-logo st-logo-big" aria-hidden="true"></div><div>Loading project…</div></div>
+  <noscript><p>Moviclone Studio needs JavaScript.</p></noscript>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

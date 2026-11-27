@@ -1,0 +1,33 @@
+[package]
+name = "moviclone-historian"
+description = "Historian: local store-and-forward journal, history queries, data loggers"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[features]
+default = []
+# SQL Server forwarder (tiberius over rustls; no OpenSSL / native-tls).
+mssql = ["dep:tiberius", "dep:tokio-util"]
+
+[dependencies]
+moviclone-model.workspace = true
+moviclone-tagdb.workspace = true
+tokio.workspace = true
+axum.workspace = true
+redb.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tracing.workspace = true
+anyhow.workspace = true
+tiberius = { version = "0.12.3", default-features = false, features = ["tds73", "rustls", "sql-browser-tokio"], optional = true }
+tokio-util = { version = "0.7", features = ["compat"], optional = true }
+
+[target.'cfg(windows)'.dependencies]
+# Windows integrated authentication (SSPI) for `integrated_auth = true` databases.
+tiberius = { version = "0.12.3", default-features = false, features = ["winauth"], optional = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["test-util"] }
+tower = { version = "0.5", features = ["util"] }
+http-body-util = "0.1"

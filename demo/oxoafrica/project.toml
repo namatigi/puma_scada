@@ -1,0 +1,14 @@
+name = "OXOAFRICA SCADA"
+culture = "en-us"
+main_screen = "Manifold"
+reports = ["Report1", "Report2", "Report3", "Report4"]
+
+[sampling]
+fast_ms = 500
+slow_ms = 5000
+publish_ms = 250
+
+[origin]
+tool = "Movicon.NExT"
+version = "4.3.373.61"
+project_id = "8c59fa24-f8ec-40bb-9e8a-2a1ecd1b29cc"

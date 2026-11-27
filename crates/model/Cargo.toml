@@ -1,0 +1,10 @@
+[package]
+name = "moviclone-model"
+description = "Typed project model: tags, drivers, databases, historians, screens"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+serde.workspace = true
+toml.workspace = true

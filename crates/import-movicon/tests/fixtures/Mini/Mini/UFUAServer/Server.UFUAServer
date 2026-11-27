@@ -1,0 +1,55 @@
+<DefaultName>
+  <xs:schema id="DefaultName" xmlns:xs="http://www.w3.org/2001/XMLSchema"><xs:element name="DefaultName" /></xs:schema>
+  <UFUATag>
+    <OID>1</OID>
+    <Name>Flow</Name>
+    <Description>Mass flow</Description>
+    <DataType>9</DataType>
+    <ArrayDimension>0</ArrayDimension>
+    <DynamicSettings>ModbusTCP.Station=Meter_1|LinkType=0|FC=5|SA=247|File=0</DynamicSettings>
+    <NodeId>aaaaaaaa-0000-0000-0000-000000000001</NodeId>
+    <HistorianSettings>H1</HistorianSettings>
+  </UFUATag>
+  <UFUATag>
+    <OID>2</OID>
+    <Name>Reset</Name>
+    <Description>Reset</Description>
+    <DataType>0</DataType>
+    <DynamicSettings>ModbusTCP.Station=Meter_1|LinkType=1|FC=0|SA=3|File=0</DynamicSettings>
+    <NodeId>aaaaaaaa-0000-0000-0000-000000000002</NodeId>
+  </UFUATag>
+  <UFUATag>
+    <OID>3</OID>
+    <Name>Orphan</Name>
+    <DataType>9</DataType>
+    <DynamicSettings>ModbusTCP.Station=Meters|LinkType=0|FC=5|SA=10|File=0</DynamicSettings>
+    <NodeId>aaaaaaaa-0000-0000-0000-000000000003</NodeId>
+  </UFUATag>
+  <UFUACommunicationDriverEx>
+    <OID>4</OID>
+    <Name>ModbusTCP</Name>
+    <FriendlyName>Modbus TCP-IP</FriendlyName>
+  </UFUACommunicationDriverEx>
+  <UFUAHistorianSettings>
+    <OID>1</OID>
+    <Name>H1</Name>
+    <Enabled>true</Enabled>
+    <ConnectionSettings>XpoProvider=MSSqlServer;data source=PLANT-PC\SQLEXPRESS;user id=hmi;password=Hunter2!;initial catalog=Mini_IO;Persist Security Info=true</ConnectionSettings>
+    <MaxAge>86400</MaxAge>
+  </UFUAHistorianSettings>
+  <DataLoggerSettings>
+    <OID>1</OID>
+    <Name>L1</Name>
+    <Enable>true</Enable>
+    <RecordOnDataChange>true</RecordOnDataChange>
+    <RecordingTimeInterval>0</RecordingTimeInterval>
+    <MaxAge>86400</MaxAge>
+    <ConnectionSettings>System.Data.SqlClient|Data Source=PLANT-PC\SQLEXPRESS;Initial Catalog=Mini_IO;User ID=hmi;Password=Hunter2!|MicrosoftSqlServer</ConnectionSettings>
+  </DataLoggerSettings>
+  <DataLoggerColumn>
+    <OID>1</OID>
+    <ColumnName>Flow</ColumnName>
+    <ColumnTag>aaaaaaaa-0000-0000-0000-000000000001|2:Tags/2:Flow|ns=2;g=aaaaaaaa-0000-0000-0000-000000000001|Flow (Mini_IOServer)</ColumnTag>
+    <DataLoggerReference>1</DataLoggerReference>
+  </DataLoggerColumn>
+</DefaultName>

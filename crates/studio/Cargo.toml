@@ -1,0 +1,23 @@
+[package]
+name = "moviclone-studio"
+description = "Studio backend: read/write project files with validation for the web editor"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+moviclone-model.workspace = true
+moviclone-check.workspace = true
+tokio.workspace = true
+axum.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+toml.workspace = true
+tracing.workspace = true
+anyhow.workspace = true
+
+[dev-dependencies]
+tower = { version = "0.5", features = ["util"] }
+tower-http.workspace = true
+tempfile = "3"
+tracing-subscriber.workspace = true

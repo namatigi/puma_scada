@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScreenDocument xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://progea.com">
+  <height>680</height>
+  <idDocument>11111111-1111-1111-1111-111111111111</idDocument>
+  <mapScreenEntities>
+    <entry>
+      <XamlName>ButtonControl</XamlName>
+      <Settings>
+        <mapProblematicXamlWriterProperties xmlns:d5p1="http://schemas.datacontract.org/2004/07/ScreenSettings.Entities">
+          <d5p1:entry>
+            <d5p1:Key>Content</d5p1:Key>
+            <d5p1:Value>&lt;String xmlns="clr-namespace:System;assembly=mscorlib"&gt;Reset &amp;amp; Report&lt;/String&gt;</d5p1:Value>
+          </d5p1:entry>
+        </mapProblematicXamlWriterProperties>
+      </Settings>
+    </entry>
+  </mapScreenEntities>
+  <width>320</width>
+</ScreenDocument>

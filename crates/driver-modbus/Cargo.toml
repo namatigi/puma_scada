@@ -1,0 +1,19 @@
+[package]
+name = "moviclone-driver-modbus"
+description = "Modbus TCP client driver: polls the planned jobs, decodes values, executes writes"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+moviclone-model.workspace = true
+moviclone-check.workspace = true
+moviclone-tagdb.workspace = true
+tokio.workspace = true
+tokio-modbus.workspace = true
+tracing.workspace = true
+anyhow.workspace = true
+serde.workspace = true
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["test-util"] }

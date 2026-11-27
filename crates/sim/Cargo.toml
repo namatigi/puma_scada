@@ -1,0 +1,19 @@
+[package]
+name = "moviclone-sim"
+description = "Modbus TCP flow-meter simulator for development and tests"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+moviclone-model.workspace = true
+moviclone-tagdb.workspace = true
+# Shares the register codec with the driver so both always agree on byte order.
+moviclone-driver-modbus.workspace = true
+tokio.workspace = true
+tokio-modbus.workspace = true
+tracing.workspace = true
+anyhow.workspace = true
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["test-util"] }

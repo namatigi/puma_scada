@@ -1,0 +1,419 @@
+<title>Movicon NExT Teardown</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: single reading column (~72ch) with full-width figures and tables; control-room graphite with one steel-cyan accent, amber reserved for findings */
+:root{
+  --bg:#f4f5f6; --panel:#ffffff; --ink:#1b2126; --muted:#5b6670; --line:#d5dadf;
+  --accent:#0f6f86; --accent-soft:#e2f0f3; --warn:#a35a00; --warn-soft:#fbefdc; --bad:#b3261e; --good:#2f7d32;
+  --f-display:"Barlow Semi Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#14181c; --panel:#1b2126; --ink:#e3e7ea; --muted:#94a0aa; --line:#2e363d;
+  --accent:#5cc4dc; --accent-soft:#16333b; --warn:#f0a744; --warn-soft:#3a2a12; --bad:#ff8a80; --good:#7bc77f; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#14181c; --panel:#1b2126; --ink:#e3e7ea; --muted:#94a0aa; --line:#2e363d;
+  --accent:#5cc4dc; --accent-soft:#16333b; --warn:#f0a744; --warn-soft:#3a2a12; --bad:#ff8a80; --good:#7bc77f; color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.6}
+.wrap{max-width:1040px;margin:0 auto;padding-block:40px 80px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:56px}
+section{display:flex;flex-direction:column;gap:16px;min-width:0}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;line-height:1.1;margin:0}
+h1{font-size:clamp(2.2rem,5vw,3.4rem);font-weight:700;letter-spacing:.005em}
+h2{font-size:1.9rem;font-weight:600;padding-top:12px;border-top:2px solid var(--ink)}
+h3{font-size:1.3rem;font-weight:600;margin-top:8px}
+p{margin:0;max-width:72ch}
+.eyebrow{font-family:var(--f-mono);font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.lede{font-size:1.15rem;color:var(--muted);max-width:68ch}
+code,.mono{font-family:var(--f-mono);font-size:.86em}
+code{background:var(--accent-soft);padding:1px 5px;border-radius:3px;overflow-wrap:anywhere}
+ul{margin:0;padding-left:1.2em;max-width:72ch;display:flex;flex-direction:column;gap:6px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:1px;background:var(--line);border:1px solid var(--line)}
+.stat{background:var(--panel);padding:14px 16px;display:flex;flex-direction:column;gap:2px}
+.stat b{font-family:var(--f-display);font-size:1.9rem;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.1}
+.stat span{font-size:.85rem;color:var(--muted)}
+figure{margin:0;background:var(--panel);border:1px solid var(--line);padding:16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+figure .scroll{overflow-x:auto}
+figure svg{display:block;width:100%;min-width:720px;height:auto;color:var(--ink)}
+figcaption{font-size:.9rem;color:var(--muted);max-width:80ch}
+.tbl{overflow-x:auto;border:1px solid var(--line);background:var(--panel)}
+table{border-collapse:collapse;width:100%;font-size:.92rem}
+th,td{text-align:left;vertical-align:top;padding:8px 12px;border-bottom:1px solid var(--line)}
+th{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:500;background:var(--bg)}
+tr:last-child td{border-bottom:0}
+td.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.bar{height:8px;background:var(--accent);border-radius:1px;min-width:2px}
+.bar.waste{background:var(--warn)}
+.sev{display:inline-block;font-family:var(--f-mono);font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;padding:1px 7px;border-radius:2px;white-space:nowrap}
+.sev.high{background:var(--bad);color:var(--panel)}
+.sev.med{background:var(--warn-soft);color:var(--warn);border:1px solid var(--warn)}
+.sev.low{background:var(--accent-soft);color:var(--accent)}
+.note{border-left:3px solid var(--warn);background:var(--warn-soft);padding:10px 14px;font-size:.92rem;max-width:80ch}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.two>div{min-width:0;display:flex;flex-direction:column;gap:8px}
+pre{margin:0;font-family:var(--f-mono);font-size:.8rem;line-height:1.5;background:var(--panel);border:1px solid var(--line);padding:12px 14px;overflow-x:auto}
+.legend{font-size:.85rem;color:var(--muted)}
+svg text{font-family:var(--f-body)}
+svg .mono{font-family:var(--f-mono)}
+</style>
+
+<div class="wrap">
+
+<header style="display:flex;flex-direction:column;gap:14px">
+  <div class="eyebrow">Teardown · Movicon.NExT 4.3.373 · project “Petrogas”</div>
+  <h1>Movicon NExT, taken apart</h1>
+  <p class="lede">How the open Petrogas project is built, stored and executed, read from its files on disk, the installed platform, the runtime logs and the live designer and runtime UI. The second half maps each part onto a smaller, sturdier design in Rust.</p>
+  <div class="stats">
+    <div class="stat"><b>49</b><span>tags, 4 Modbus TCP flow meters</span></div>
+    <div class="stat"><b>10</b><span>screens, stored as 140 files</span></div>
+    <div class="stat"><b>1.37 GB</b><span>RAM across 3 processes</span></div>
+    <div class="stat"><b>~53 s</b><span>cold project start (last 3 runs)</span></div>
+    <div class="stat"><b>1.52 GB</b><span>install, 16,298 files</span></div>
+  </div>
+  <p class="legend">Evidence levels: statements about files, sizes, process arguments and log lines were measured directly. Statements about internal code are inferred from assembly names, file formats and logs; no binaries were decompiled.</p>
+</header>
+
+<section>
+  <h2>1. The running system</h2>
+  <p>Movicon NExT is a .NET “platform” of cooperating processes. The project is loaded by a WPF runtime, which launches a separate I/O server and talks to it over OPC UA. Every service module (scheduler, alarm dispatcher, recipes) is modelled as its own OPC UA server application with its own endpoint and SQL catalog.</p>
+  <figure>
+    <div class="scroll">
+    <svg viewBox="0 0 960 470" role="img" aria-label="Process topology: the WPF runtime spawns the OPC UA I/O server, which polls Modbus devices and writes to SQL Server with local XML fallback files.">
+      <defs>
+        <marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker>
+        <marker id="a1w" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--warn)"/></marker>
+      </defs>
+      <g fill="none" stroke="currentColor" stroke-width="1.2">
+        <rect x="20" y="30" width="230" height="74" rx="3"/>
+        <rect x="20" y="150" width="230" height="74" rx="3"/>
+        <rect x="20" y="270" width="230" height="74" rx="3"/>
+        <rect x="20" y="390" width="230" height="60" rx="3" stroke-dasharray="4 3"/>
+        <rect x="360" y="130" width="250" height="130" rx="3" stroke="var(--accent)" stroke-width="2"/>
+        <rect x="360" y="320" width="250" height="60" rx="3" stroke-dasharray="4 3"/>
+        <rect x="720" y="40" width="220" height="84" rx="3"/>
+        <rect x="720" y="190" width="220" height="74" rx="3"/>
+        <rect x="720" y="330" width="220" height="60" rx="3" stroke="var(--warn)"/>
+      </g>
+      <g fill="currentColor" font-size="13">
+        <text x="32" y="54" font-weight="600">MoviconNExT.exe — designer</text>
+        <text x="32" y="74" font-size="12">WPF, .NET Framework 4.7</text>
+        <text x="32" y="93" font-size="12" class="mono">692 MB working set</text>
+        <text x="32" y="174" font-weight="600">MoviconNextRT.exe — runtime</text>
+        <text x="32" y="194" font-size="12">WPF client, renders screens</text>
+        <text x="32" y="213" font-size="12" class="mono">498 MB working set</text>
+        <text x="32" y="294" font-weight="600">WebHMIServer + HTML5 client</text>
+        <text x="32" y="314" font-size="12">ASP.NET Core, net6.0</text>
+        <text x="32" y="333" font-size="12">project type “WebHMI”</text>
+        <text x="32" y="414" font-weight="600">Project folder</text>
+        <text x="32" y="434" font-size="12">XML · JSON · XAML · SVG · binary</text>
+        <text x="372" y="154" font-weight="600">PlatformNextIOServer.exe</text>
+        <text x="372" y="174" font-size="12">OPC UA server, netcoreapp2.0</text>
+        <text x="372" y="198" font-size="12">tag table · alarms · data logger</text>
+        <text x="372" y="216" font-size="12">historian · driver host</text>
+        <text x="372" y="240" font-size="12" class="mono">183 MB · opc.tcp :62841</text>
+        <text x="372" y="344" font-weight="600">Scheduler · Dispatcher · Recipe</text>
+        <text x="372" y="364" font-size="12">each a separate OPC UA app</text>
+        <text x="732" y="64" font-weight="600">Modbus TCP gateway</text>
+        <text x="732" y="84" font-size="12" class="mono">169.254.100.100:502</text>
+        <text x="732" y="104" font-size="12">stations 1–4 (flow meters)</text>
+        <text x="732" y="214" font-weight="600">SQL Server Express</text>
+        <text x="732" y="234" font-size="12">historian, data logger, events</text>
+        <text x="732" y="253" font-size="12">via DevExpress XPO</text>
+        <text x="732" y="354" font-weight="600" fill="var(--warn)">SafeData*.xml files</text>
+        <text x="732" y="374" font-size="12">local buffer when SQL is down</text>
+      </g>
+      <g stroke="currentColor" stroke-width="1.3" fill="none" marker-end="url(#a1)">
+        <path d="M250 187 H360"/>
+        <path d="M250 307 H300 V230 H360"/>
+        <path d="M135 104 V138" stroke-dasharray="4 3"/>
+        <path d="M610 170 H700 V82 H720"/>
+        <path d="M610 215 H720"/>
+        <path d="M250 420 H330 V250 H360" stroke-dasharray="4 3"/>
+      </g>
+      <path d="M610 245 H680 V360 H720" stroke="var(--warn)" stroke-width="1.3" fill="none" marker-end="url(#a1w)"/>
+      <g fill="currentColor" font-size="11.5" class="mono">
+        <text x="262" y="180">net.pipe · 250 ms</text>
+        <text x="262" y="300">OPC UA</text>
+        <text x="142" y="126">start/stop</text>
+        <text x="626" y="74">15 poll jobs</text>
+        <text x="626" y="160">every 500 ms</text>
+        <text x="626" y="208">XPO ORM</text>
+        <text x="626" y="300" fill="var(--warn)">on SQL error</text>
+        <text x="262" y="413">-conn=InMemoryDataStore</text>
+      </g>
+    </svg>
+    </div>
+    <figcaption>Measured from <code>Win32_Process</code> command lines. The runtime starts the I/O server with <code>-processId=19432</code> so the server dies with its parent, and points it at the project’s XML files through XPO connection strings such as <code>XpoProvider=InMemoryDataStore;data source=…/Server.UFUAServer</code>. Screens bind to tags by OPC UA NodeId over <code>net.pipe://localhost/Petrogas_IOServer</code>, even though both ends run on the same machine.</figcaption>
+  </figure>
+</section>
+
+<section>
+  <h2>2. Anatomy of a project</h2>
+  <p>The <code>.UFProject</code> file is a WCF DataContract XML manifest: culture, theme, main screen GUID, sampling intervals (fast 500 ms, slow 5000 ms, publishing 250 ms), per-screen tile colours and the project type (<code>WebHMI</code>). Every other module is a folder holding one document. Most of those documents are serialized ADO.NET DataSets: an inline XSD schema followed by table rows, which is how DevExpress XPO’s <code>InMemoryDataStore</code> persists objects.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Path</th><th>Format</th><th>What it holds</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">Petrogas.UFProject</td><td>DataContract XML</td><td>Project manifest, startup screen, global sampling, child projects, speech/geo settings</td></tr>
+      <tr><td class="mono">UFUAServer/Server.UFUAServer</td><td>XPO DataSet (21 tables)</td><td>Tags, folders, prototypes, alarm definitions and thresholds, historian and data-logger settings, engineering units, OPC UA endpoint config, driver registry. Byte-identical copy in <code>.core</code></td></tr>
+      <tr><td class="mono">UFUAServer/Drivers/ModbusTCP.drvSettings</td><td>XPO DataSet</td><td>Channel (host, port, timeouts), 4 stations (IDs 1–4)</td></tr>
+      <tr><td class="mono">UFUAServer/Drivers/ModbusTCP.dynJobs</td><td>XPO DataSet</td><td>Compiled poll plan: 49 tag settings coalesced into 15 comm jobs (start address, size, interval)</td></tr>
+      <tr><td class="mono">UFUAServer/DataLogger · Historian · EventLog</td><td>XML DataSet</td><td><code>SafeData*</code> store-and-forward buffers written when SQL is unreachable</td></tr>
+      <tr><td class="mono">Screen/*.xaml + 13 sidecars</td><td>XAML, XML, binary XML, JSON, SVG, PNG</td><td>One visual screen (section 4)</td></tr>
+      <tr><td class="mono">Symbols/…/Viewbox*.xaml</td><td>Encrypted XAML + settings</td><td>Licensed symbol library content, opaque without the platform</td></tr>
+      <tr><td class="mono">Report/*.report</td><td>XML wrapping base64</td><td>DevExpress XtraReports v19.2 layouts, serialized .NET resources</td></tr>
+      <tr><td class="mono">Events · AlarmDispatcher · SchedulerServer · Recipe · UFUser</td><td>XPO DataSets</td><td>Each module repeats a full <code>ConfigurationBase</code> (71 columns of OPC UA server settings) and its own SQL connection strings</td></tr>
+      <tr><td class="mono">Logic/Logic1.Logic</td><td>XML</td><td>Cycle-based logic document (empty circuit here, 250 ms cycle)</td></tr>
+      <tr><td class="mono">*.backup.zip ×10</td><td>Zip</td><td>Whole-project snapshots (<code>maxBackupCount=10</code>), about 2 MB each</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <h2>3. Tags, drivers and the data path</h2>
+  <p>A tag is a row in <code>UFUATag</code> with about 40 columns. Its connection to the field is one pipe-delimited string, parsed by the driver at load time:</p>
+  <pre>Name             FM_01_MassFlow
+DataType         9            (float)
+DynamicSettings  ModbusTCP.Station=Flow_Meter_1|LinkType=0|FC=5|SA=247|File=0
+HistorianSettings FM01        (matched by name)
+NodeId           f1ecf2f8-e820-4ba9-afe2-5216926580a3   → OPC UA ns=2;g=…</pre>
+  <div class="two">
+    <div>
+      <h3>From device to pixel</h3>
+      <ul>
+        <li>The driver groups adjacent addresses into 15 jobs and polls them every 500 ms over one TCP channel.</li>
+        <li>Values land in the OPC UA address space (<code>2:Tags/2:FM_01_Density</code>), with quality and timestamps.</li>
+        <li>The runtime subscribes per visible screen, with 250 ms publishing. <code>disableWhenNotUsed</code> drops items 30 s after a screen closes.</li>
+        <li>Screen controls resolve a <code>SVGReferenceId</code> → <code>.references</code> entry → NodeId, then format the value (<code>#0.000000</code>, unit <code>kg/m³</code>).</li>
+        <li>Bad quality draws a red border and a warning triangle, which is what the live Manifold screen shows now, because the 169.254.100.100 gateway is unreachable from this PC.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Logged startup sequence</h3>
+      <div class="tbl"><table>
+        <thead><tr><th>Step</th><th class="num">Time</th></tr></thead>
+        <tbody>
+          <tr><td>“Starting project” → OPC UA listening</td><td class="num">43.8 s</td></tr>
+          <tr><td>Load server properties + driver</td><td class="num">0.05 s</td></tr>
+          <tr><td>Address space (49 tags)</td><td class="num">0.06 s</td></tr>
+          <tr><td>Data loggers, alarms, dynamics</td><td class="num">0.12 s</td></tr>
+          <tr><td>Licence checks → “Project started”</td><td class="num">3.1 s</td></tr>
+          <tr><td><b>Total, latest run</b></td><td class="num"><b>52.8 s</b></td></tr>
+        </tbody>
+      </table></div>
+      <p class="legend">The actual tag work takes about a quarter of a second. Nearly all the time goes to process spawn, .NET start-up and assembly loading before the server listens.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>4. One screen, fourteen files</h2>
+  <p>The designer keeps every screen in parallel encodings: WPF XAML for the desktop runtime, SVG plus JSON for the HTML5 client, and two settings stores (XML and WCF binary XML), each duplicated again as “compiled”. Below is <code>FM_01</code>, a screen with 12 controls.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>File</th><th>Role</th><th class="num">Bytes</th><th style="width:34%"></th></tr></thead>
+    <tbody>
+      <tr><td class="mono">.xaml</td><td>Canonical layout (Canvas + positions)</td><td class="num">6,568</td><td><div class="bar" style="width:3.4%"></div></td></tr>
+      <tr><td class="mono">.xaml.Settings</td><td>Per-object behaviour: commands, animations, security, 3D limits</td><td class="num">195,503</td><td><div class="bar waste" style="width:100%"></div></td></tr>
+      <tr><td class="mono">.xaml.compiled.Settings</td><td>Byte-identical copy of the above</td><td class="num">195,503</td><td><div class="bar waste" style="width:100%"></div></td></tr>
+      <tr><td class="mono">.xaml.Settings.bin</td><td>Same data, WCF binary XML</td><td class="num">108,125</td><td><div class="bar waste" style="width:55%"></div></td></tr>
+      <tr><td class="mono">.xaml.compiled.Settings.bin</td><td>Same again</td><td class="num">108,125</td><td><div class="bar waste" style="width:55%"></div></td></tr>
+      <tr><td class="mono">.controls</td><td>Web client control props (JSON)</td><td class="num">44,440</td><td><div class="bar" style="width:22.7%"></div></td></tr>
+      <tr><td class="mono">.references</td><td>Tag bindings, UTF-16 XML</td><td class="num">42,506</td><td><div class="bar" style="width:21.7%"></div></td></tr>
+      <tr><td class="mono">.png</td><td>Thumbnail for tiles</td><td class="num">37,680</td><td><div class="bar" style="width:19.3%"></div></td></tr>
+      <tr><td class="mono">.ios</td><td>HTML5 SVG with nested foreignObjects</td><td class="num">13,966</td><td><div class="bar" style="width:7.1%"></div></td></tr>
+      <tr><td class="mono">.styles</td><td>Symbol style sheet (SVG)</td><td class="num">12,468</td><td><div class="bar" style="width:6.4%"></div></td></tr>
+      <tr><td class="mono">.xaml.compiled</td><td>XAML with transforms expanded</td><td class="num">10,576</td><td><div class="bar" style="width:5.4%"></div></td></tr>
+      <tr><td class="mono">.entities</td><td>Web security/zoom per object (JSON)</td><td class="num">7,912</td><td><div class="bar" style="width:4%"></div></td></tr>
+      <tr><td class="mono">.svg</td><td>Flat SVG layout</td><td class="num">4,050</td><td><div class="bar" style="width:2.1%"></div></td></tr>
+      <tr><td class="mono">.commands</td><td>Web command list (JSON)</td><td class="num">3,247</td><td><div class="bar" style="width:1.7%"></div></td></tr>
+      <tr><td><b>Total</b></td><td>≈120× the layout itself</td><td class="num"><b>790,669</b></td><td></td></tr>
+    </tbody>
+  </table></div>
+  <p>In <code>Manifold.xaml.Settings</code>, 6,148 of 7,507 leaf values (82%) are defaults, nulls or zero GUIDs, because DataContract serialization writes every field of every object. The Manifold screen totals 3.0 MB for a 34 KB XAML. Keeping these copies in sync is the designer’s job on every save, which is why opening Manifold in the editor took about 10 seconds.</p>
+</section>
+
+<section>
+  <h2>5. What the UI shows</h2>
+  <div class="two">
+    <div>
+      <h3>Designer</h3>
+      <ul>
+        <li>Visual Studio–style dock layout (the layout is saved in <code>Documents/Petrogas.layout</code>): project explorer on the left, document tabs in the centre, property grid on the right, ToolBox and Symbol Library as side tabs, and Animations / XML / Script / System Log / Commands panels along the bottom.</li>
+        <li>The project tree mirrors the folder layout: Client Configuration, Logic, Schedulers, Reports, Screens, Parameters, Texts, Cross Reference, Events, Recipes, I/O Data Server (Data Structure, Tags List, Settings, Drivers, Alarms, Historians, Data Loggers, Engineering Units, Views, Redundancy), Users.</li>
+        <li>Each tool is a separately loaded plug-in DLL (<code>DesignPlugins</code>, <code>DocumentManagers</code>, <code>Toolbox</code>, <code>Managers</code>).</li>
+        <li>Animation is a fixed catalogue applied per object: Back Color, Border Color, Visibility, Blink, Filling, Height, Width, Scale, Rotation, Move X, Move Y.</li>
+        <li>The Script panel reads “No supported on WebHMI”: choosing the web project type removes C#/VB scripting.</li>
+        <li>Selecting and zooming marked the Manifold tab as modified (<code>*</code>), so view state and document state are not separated.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Runtime</h3>
+      <ul>
+        <li>Full-screen, borderless WPF window started with <code>-start -skin=VS2017Dark -nosplash -debug</code>.</li>
+        <li>Manifold is a 1920×1080 canvas of custom <code>Pipeline</code> polylines, valve and meter symbols, and value displays in mTon/hr. Navigation buttons open the per-meter trend screens.</li>
+        <li>Opening “HFO Trend &amp; Log” took about 10 s and then hung on “Fetching Data…”. The historian’s connection string names a SQL instance on the original engineering PC that doesn’t exist here.</li>
+        <li>The trend/log view is a DevExpress chart plus grid with time presets (Minute … All), a 3,600-record cap and a 1753–9999 default range.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>6. Weak points found in this project</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>Severity</th><th>Finding</th><th>Evidence</th></tr></thead>
+    <tbody>
+      <tr><td><span class="sev high">High</span></td><td>SQL login and password stored in plain text</td><td>Historian and data-logger <code>ConnectionSettings</code> in <code>Server.UFUAServer</code>. Also present in every backup zip.</td></tr>
+      <tr><td><span class="sev high">High</span></td><td>Runtime crashes</td><td>52 FATAL “application needs to be closed” entries in <code>SysLog.xml.1</code></td></tr>
+      <tr><td><span class="sev high">High</span></td><td>References not validated before run</td><td>Logged: station “Flow_Meters” does not exist (21×); NodeId missing from the address space, required by ModbusTCP (4×)</td></tr>
+      <tr><td><span class="sev med">Med</span></td><td>Machine-specific config baked into the project</td><td>Connection strings name two different PCs’ SQL instances. The audit trail points at a third catalog on another host. CREATE DATABASE failed on a user path (24×).</td></tr>
+      <tr><td><span class="sev med">Med</span></td><td>Slow cold start</td><td>50–59 s for 49 tags. Only ~0.3 s of it is tag/driver work.</td></tr>
+      <tr><td><span class="sev med">Med</span></td><td>Unsupported runtimes underneath</td><td>.NET Framework 4.7, netcoreapp2.0 (out of support since 2018), net6.0 (out of support Nov 2024); DevExpress 19.2 and 21.2 side by side</td></tr>
+      <tr><td><span class="sev med">Med</span></td><td>Storage that resists version control</td><td>14 files per screen, binary duplicates, GUID-keyed XML, base64 reports, encrypted symbols</td></tr>
+      <tr><td><span class="sev low">Low</span></td><td>Weak user policy</td><td>Minimum password length 4, 999,999 invalid attempts allowed, user manager disabled</td></tr>
+      <tr><td><span class="sev low">Low</span></td><td>Inconsistent model</td><td><code>FM_04_Reset_Total</code> is logged under historian FM01. <code>FM_01_Volume_Rate</code> has a different LinkType from its siblings.</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">The plain-text database password is in a OneDrive-synced folder and in 10 backup archives. Rotate it and move it to a secret store, whether or not the Rust work goes ahead.</p>
+</section>
+
+<section>
+  <h2>7. The same system in Rust</h2>
+  <p>The core idea: <b>one typed source model, one compile step, one runtime process.</b> Movicon’s complexity mostly comes from keeping many representations and processes in agreement at run time. Rust’s type system and a build step can settle that agreement before the plant ever sees it.</p>
+  <figure>
+    <div class="scroll">
+    <svg viewBox="0 0 960 520" role="img" aria-label="Proposed Rust architecture: a build step validates text project sources into a bundle; one runtime process holds drivers, tag store, alarms, historian and gateways; browsers and a Tauri shell render the same web HMI.">
+      <defs>
+        <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker>
+      </defs>
+      <g fill="none" stroke="currentColor" stroke-width="1.2">
+        <rect x="20" y="40" width="180" height="70" rx="3"/>
+        <rect x="20" y="170" width="180" height="70" rx="3" stroke="var(--accent)" stroke-width="2"/>
+        <rect x="20" y="300" width="180" height="60" rx="3"/>
+        <rect x="260" y="20" width="440" height="400" rx="4" stroke-dasharray="6 4"/>
+        <rect x="290" y="60" width="150" height="60" rx="3"/>
+        <rect x="490" y="60" width="180" height="140" rx="3" stroke="var(--accent)" stroke-width="2"/>
+        <rect x="290" y="160" width="150" height="60" rx="3"/>
+        <rect x="290" y="260" width="150" height="60" rx="3"/>
+        <rect x="490" y="250" width="180" height="60" rx="3"/>
+        <rect x="490" y="340" width="180" height="60" rx="3"/>
+        <rect x="760" y="60" width="180" height="60" rx="3"/>
+        <rect x="760" y="180" width="180" height="60" rx="3"/>
+        <rect x="760" y="300" width="180" height="60" rx="3"/>
+        <rect x="290" y="450" width="380" height="54" rx="3"/>
+      </g>
+      <g fill="currentColor" font-size="13">
+        <text x="32" y="64" font-weight="600">Project sources</text>
+        <text x="32" y="84" font-size="12">TOML/JSON + SVG, in git</text>
+        <text x="32" y="101" font-size="12">1 file per screen</text>
+        <text x="32" y="194" font-weight="600">movi build</text>
+        <text x="32" y="214" font-size="12">schema + reference checks</text>
+        <text x="32" y="231" font-size="12">poll planner, bundle</text>
+        <text x="32" y="324" font-weight="600">Editor (Tauri)</text>
+        <text x="32" y="344" font-size="12">same renderer as HMI</text>
+        <text x="272" y="42" font-size="12" class="mono">moviclone-rt · one process · tokio</text>
+        <text x="302" y="84" font-weight="600">Drivers</text>
+        <text x="302" y="104" font-size="12">tokio-modbus, …</text>
+        <text x="502" y="84" font-weight="600">Tag store</text>
+        <text x="502" y="104" font-size="12">Vec&lt;Tag&gt; by u32 id</text>
+        <text x="502" y="122" font-size="12">value · quality · ts</text>
+        <text x="502" y="146" font-size="12">change bus</text>
+        <text x="502" y="164" font-size="12">(broadcast, coalesced)</text>
+        <text x="302" y="184" font-weight="600">Alarm engine</text>
+        <text x="302" y="204" font-size="12">ISA-18.2 state machine</text>
+        <text x="302" y="284" font-weight="600">Logic / scripts</text>
+        <text x="302" y="304" font-size="12">Rhai or WASM sandbox</text>
+        <text x="502" y="274" font-weight="600">Historian</text>
+        <text x="502" y="294" font-size="12">local WAL → forwarder</text>
+        <text x="502" y="364" font-weight="600">Gateways</text>
+        <text x="502" y="384" font-size="12">axum WebSocket · OPC UA</text>
+        <text x="772" y="84" font-weight="600">Field devices</text>
+        <text x="772" y="104" font-size="12">Modbus TCP stations</text>
+        <text x="772" y="204" font-weight="600">Browser HMI</text>
+        <text x="772" y="224" font-size="12">or Tauri kiosk shell</text>
+        <text x="772" y="324" font-weight="600">Postgres / MSSQL</text>
+        <text x="772" y="344" font-size="12">sqlx, secrets from vault</text>
+        <text x="302" y="474" font-weight="600">Bundle (.mvb)</text>
+        <text x="302" y="493" font-size="12">rkyv: memory-mapped, zero-parse load, signed</text>
+      </g>
+      <g stroke="currentColor" stroke-width="1.3" fill="none" marker-end="url(#a2)">
+        <path d="M110 110 V170"/>
+        <path d="M110 300 V240"/>
+        <path d="M110 240 V477 H290"/>
+        <path d="M480 450 V420"/>
+        <path d="M760 90 H440"/>
+        <path d="M440 90 H490"/>
+        <path d="M490 175 H440 V190"/>
+        <path d="M580 200 V250"/>
+        <path d="M440 290 H465 V140 H490"/>
+        <path d="M670 160 H700 V370 H670" stroke-dasharray="4 3"/>
+        <path d="M670 370 H720 V210 H760"/>
+        <path d="M670 280 H730 V330 H760"/>
+      </g>
+      <g fill="currentColor" font-size="11.5" class="mono">
+        <text x="118" y="146">compile</text>
+        <text x="118" y="280">edits</text>
+        <text x="488" y="440">mmap</text>
+        <text x="610" y="82">poll</text>
+        <text x="452" y="82">write</text>
+        <text x="586" y="232">subscribe</text>
+        <text x="706" y="196">push Δ</text>
+        <text x="682" y="324">batch</text>
+        <text x="448" y="282">r/w</text>
+      </g>
+    </svg>
+    </div>
+    <figcaption>Five processes and two IPC hops (net.pipe, then OPC UA) become one process with in-memory channels. OPC UA stays available as an external interface instead of being the internal bus. Desktop and web share a single renderer, so the screen exists in one format, not six.</figcaption>
+  </figure>
+
+  <div class="tbl"><table>
+    <thead><tr><th>Movicon NExT today</th><th>Rust design</th><th>What it buys</th></tr></thead>
+    <tbody>
+      <tr><td>XPO DataSets with inline XSD; a 40-column tag row; config buried in pipe strings like <code>Station=…|SA=247</code></td><td><code>serde</code> structs with enums (<code>Address::Modbus{station, kind, addr}</code>); defaults omitted from files; JSON Schema generated for the editor</td><td>Diffable, mergeable projects. Invalid addresses fail to parse instead of failing at run time.</td></tr>
+      <tr><td>14 files per screen, synced by the designer</td><td>One SVG with <code>data-bind</code> attributes plus one TOML sidecar; derived artefacts produced only by <code>movi build</code></td><td>One source of truth, roughly 10–100× less on disk</td></tr>
+      <tr><td>References checked at run time, logged as errors</td><td>The build resolves every tag, station, screen and historian reference and rejects dangling ones with file:line diagnostics</td><td>Removes the “station does not exist” and “missing NodeId” class of faults</td></tr>
+      <tr><td>Startup of 50 s: process spawn, CLR, plug-in loading</td><td>Static binary; bundle memory-mapped with <code>rkyv</code>; drivers start as tasks</td><td>Sub-second start; a plant restart becomes cheap</td></tr>
+      <tr><td>Tags exposed through an OPC UA server, consumed by the local HMI over net.pipe</td><td>Lock-free tag arena indexed by <code>u32</code>; <code>tokio::sync::broadcast</code> change bus coalesced per client tick; <code>async-opcua</code> server for outside consumers only</td><td>Fewer copies and serializations per value; memory in the tens of MB for this project</td></tr>
+      <tr><td>Driver DLLs loaded in-process by reflection</td><td><code>trait Driver</code> (async read/write/browse); each station a supervised task with backoff; optional out-of-process drivers over a stdio protocol for vendor SDKs (AGLink, PVI)</td><td>One misbehaving station or panic can’t take the server down</td></tr>
+      <tr><td><code>SafeData*.xml</code> fallback, SQL schema created at first run</td><td>Append-only local journal (<code>redb</code> or SQLite WAL), forwarded in batches with <code>sqlx</code>; migrations shipped with the binary</td><td>No data loss when SQL is down, and no first-run CREATE DATABASE failures</td></tr>
+      <tr><td>Plain-text connection strings</td><td><code>secret://historian</code> references resolved from OS keychain, environment or a vault at start; never written to project files</td><td>Projects and backups can be shared safely</td></tr>
+      <tr><td>C#/VB scripts (WPF only), expression strings</td><td>Rhai for simple expressions; WASM components (<code>wasmtime</code>) with fuel and memory limits for logic</td><td>Same scripts on desktop, web and Linux; a runaway script can’t freeze the HMI</td></tr>
+      <tr><td>WPF runtime plus a separate HTML5 client</td><td>One web renderer (SVG + TypeScript, or Leptos) over WebSocket; Tauri for kiosk and editor</td><td>Animations and controls implemented once</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Suggested workspace layout</h3>
+<pre>moviclone/
+├─ crates/
+│  ├─ model/        serde types: Project, Tag, Address, Screen, Alarm, Historian; JSON Schema export
+│  ├─ build/        loader, validator, poll planner (coalesce registers), bundle writer (rkyv)
+│  ├─ tagdb/        tag arena, quality/timestamp, change bus, deadband
+│  ├─ driver-api/   trait Driver + supervisor, backoff, diagnostics tags
+│  ├─ drivers/      modbus-tcp first; then s7, ethernet-ip, opc-ua-client, mqtt
+│  ├─ alarms/       ISA-18.2 states, shelving, ack, journal
+│  ├─ historian/    local WAL + forwarders (postgres/timescale, mssql via tiberius)
+│  ├─ logic/        rhai expressions, wasmtime host
+│  ├─ gateway/      axum WebSocket protocol, auth (argon2, roles), async-opcua server
+│  └─ rt/           binary: loads bundle, wires everything, service/daemon mode
+├─ hmi/             web renderer + control library (display, button, trend, alarm list)
+├─ editor/          Tauri app on the same renderer
+└─ tools/movicon-import/   converter: .UFProject + Screen/*.xaml + Server.UFUAServer → model</pre>
+</section>
+
+<section>
+  <h2>8. Order of work</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>Phase</th><th>Scope</th><th>Done when</th></tr></thead>
+    <tbody>
+      <tr><td>1. Importer + model</td><td>Parse <code>Server.UFUAServer</code>, <code>ModbusTCP.drvSettings</code>, the screens’ XAML and <code>.references</code> into the new model</td><td>Petrogas round-trips into text files that pass <code>movi build</code>, with dangling references reported</td></tr>
+      <tr><td>2. Headless runtime</td><td>tagdb, Modbus TCP driver, change bus, WebSocket gateway</td><td>The 49 tags read live from the 4 meters and stream to a test client, with quality on timeout</td></tr>
+      <tr><td>3. HMI renderer</td><td>Display, text, button, open-screen, Pipeline, colour/visibility/fill animations</td><td>Manifold and FM_01…05 render from the imported SVG with live values</td></tr>
+      <tr><td>4. History + alarms</td><td>Local journal, Postgres forwarder, trend control, ISA-18.2 alarms</td><td>Trend screens show 30 days of FM01–FM04 data, and a SQL outage loses nothing</td></tr>
+      <tr><td>5. Editor</td><td>Tauri editor on the same renderer, property panel driven by the schema</td><td>A new screen can be built without touching files by hand</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">Rust fixes the architecture, not the breadth. Movicon ships 43 drivers, certified OPC UA, report designers and years of field fixes. A clone becomes competitive for projects like Petrogas (Modbus, trends, a few screens) long before it matches the whole product. Plan phases 1–4 against this one project and measure before widening scope. A Movicon-compatible importer is fine; avoid shipping Progea’s encrypted symbol library or copying its look.</p>
+</section>
+
+</div>

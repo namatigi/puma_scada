@@ -1,0 +1,5 @@
+[
+  { "SVGItemId": "EditDisplay", "SVGReferenceId": 1, "DisplayType": 0, "MeasUnit": "kg/h", "DisplayStringFormat": "#0.00", "IsReadOnly": true },
+  { "SVGItemId": "EditDisplay2", "SVGReferenceId": 2, "DisplayType": 0, "MeasUnit": "", "IsReadOnly": false },
+  { "SVGItemId": "Ghost", "SVGReferenceId": 1 }
+]

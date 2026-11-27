@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="680">
+  <foreignObject class="EditDisplay" id="EditDisplay" x="140" y="56" width="175" height="50"></foreignObject>
+  <foreignObject class="EditDisplay" id="EditDisplay2" x="140" y="110" width="175" height="50" transform="rotate(315 227.5 135)"></foreignObject>
+  <foreignObject class="TextBox" id="TextBox" x="13" y="66" width="100" height="30"></foreignObject>
+  <foreignObject class="ButtonControl" id="ButtonControl" x="20" y="300" width="93" height="36"></foreignObject>
+</svg>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ProjectData xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://progea.com">
+  <cultureName>en-us</cultureName>
+  <description i:nil="true" />
+  <fastSamplingInterval>400</fastSamplingInterval>
+  <mainScreen>11111111-1111-1111-1111-111111111111</mainScreen>
+  <projectId>8c59fa24-0000-0000-0000-000000000001</projectId>
+  <projectType>WebHMI</projectType>
+  <publishingInterval>250</publishingInterval>
+  <slowSamplingInterval>5000</slowSamplingInterval>
+  <version>4.3.373.61</version>
+</ProjectData>

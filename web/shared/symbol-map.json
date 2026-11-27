@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "description": "Maps symbols imported from Movicon (movicon:<Name>) to Moviclone library symbols. Identified from element sizes, positions and rotations only; the artwork is Moviclone's own.",
+  "symbols": {
+    "movicon:Symbol952": {
+      "symbol": "ball-valve",
+      "params": {},
+      "note": "Hand valve, 90x60, pipe axis at 72% of the height, butterfly handle above (19 on Manifold)"
+    },
+    "movicon:PipesPipe15": {
+      "symbol": "pipe-coupling",
+      "params": {},
+      "note": "Pipe union/coupling sleeve, 50x29, on the vertical risers and diagonal inlets (11 on Manifold)"
+    },
+    "movicon:Symbol739": {
+      "symbol": "pipe-tee",
+      "params": {},
+      "note": "Equal tee, 45.5x36.4, run along the bottom, branch up (9 on Manifold)"
+    },
+    "movicon:Symbol734": {
+      "symbol": "pipe-elbow",
+      "params": {},
+      "note": "90 degree elbow, 42.9x42.9, arms left and down (9 on Manifold)"
+    },
+    "movicon:Symbol408": {
+      "symbol": "coriolis-meter",
+      "params": { "product": "#9AA0A6", "head": "#FFFFFF" },
+      "note": "Coriolis mass flow meter with transmitter head, 104x125, pipe axis at 80% (5 on Manifold)"
+    },
+    "movicon:Symbol733": {
+      "symbol": "pipe-flange",
+      "params": {},
+      "note": "Blind flange / end cap, 7.7x27, closes the end of a header (2 on Manifold)"
+    },
+    "movicon:Symbol732": {
+      "symbol": "pipe-straight",
+      "params": {},
+      "note": "Straight pipe spool, 146x33 (1 on Manifold)"
+    }
+  },
+  "instances": {
+    "Manifold/ContentControl33": { "params": { "product": "#FF4D4D" }, "label": "Gasoline" },
+    "Manifold/ContentControl17": { "params": { "product": "#F4F4F4" }, "label": "JET A-1" },
+    "Manifold/ContentControl21": { "params": { "product": "#555555" }, "label": "Gasoil" },
+    "Manifold/ContentControl24": { "params": { "product": "#151515" }, "label": "HFO" },
+    "Manifold/ContentControl51": { "params": { "product": "#F08080" }, "label": "Base Oil" }
+  }
+}

@@ -1,0 +1,9 @@
+[
+  { "__type": "ValueCommand", "SVGItemId": "ButtonControl", "SVGReferenceId": 3, "_value": "1", "type": 4 },
+  { "__type": "ReportCommand", "SVGItemId": "ButtonControl", "reportName": "Report/Daily.report", "folderpath": "C:\\Reports",
+    "parameters": [
+      { "Name": "Flow", "NodeId": "bbbbbbbb-0000-0000-0000-00000000dead", "StringRef": "Flow" },
+      { "Name": "Pressure", "NodeId": "bbbbbbbb-0000-0000-0000-00000000beef", "StringRef": "Press" }
+    ] },
+  { "__type": "OpenScreenCommand", "SVGItemId": "Gone", "screenName": "Screen/Main.xaml" }
+]

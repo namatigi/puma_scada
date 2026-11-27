@@ -1,0 +1,248 @@
+name = "FM_05"
+width = 320.0
+height = 680.0
+background = "#595959"
+legacy_id = "3feaecc0-9d82-4bd2-954e-20cc0f89b55c"
+
+[[element]]
+id = "TextBox"
+kind = "label"
+text = "Base Oil"
+x = 85.0
+y = 8.0
+w = 122.0
+h = 39.0
+
+[[element]]
+id = "TextBox1"
+kind = "label"
+text = "Density"
+x = 23.0
+y = 60.0
+w = 100.0
+h = 30.0
+
+[[element]]
+id = "TextBox2"
+kind = "label"
+text = "Temperature"
+x = 20.0
+y = 112.0
+w = 100.0
+h = 30.0
+
+[[element]]
+id = "TextBox3"
+kind = "label"
+text = "Mass Flow Rate"
+x = 18.0
+y = 168.0
+w = 100.0
+h = 30.0
+
+[[element]]
+id = "TextBox4"
+kind = "label"
+text = "Volume Flow Rate"
+x = 18.0
+y = 229.0
+w = 100.0
+h = 30.0
+
+[[element]]
+id = "TextBox5"
+kind = "label"
+text = "Volume Total"
+x = 12.0
+y = 335.0
+w = 100.0
+h = 30.0
+
+[[element]]
+id = "TextBox6"
+kind = "label"
+text = "Mass Total"
+x = 18.0
+y = 284.0
+w = 100.0
+h = 30.0
+
+[[element]]
+id = "TextBox7"
+kind = "label"
+text = "Mass Total Inventory"
+x = 12.0
+y = 390.0
+w = 124.0
+h = 30.0
+
+[[element]]
+id = "TextBox8"
+kind = "label"
+text = "Volume Total Inventory"
+x = 8.0
+y = 443.0
+w = 133.0
+h = 30.0
+
+[[element]]
+id = "TextBox9"
+kind = "label"
+text = "External Temperature"
+x = 8.0
+y = 499.0
+w = 129.0
+h = 30.0
+
+[[element]]
+id = "TextBox10"
+kind = "label"
+text = "External Pressure"
+x = 10.0
+y = 560.0
+w = 100.0
+h = 30.0
+
+[[element]]
+id = "EditDisplay"
+kind = "display"
+tag = "FM_05_Density"
+unit = "kg/m³"
+format = "#0.000000"
+editable = false
+x = 140.0
+y = 52.0
+w = 175.0
+h = 50.0
+
+[[element]]
+id = "EditDisplay2"
+kind = "display"
+tag = "FM_05_Temp"
+unit = "°C"
+format = "#0.000000"
+editable = false
+x = 140.0
+y = 107.0
+w = 175.0
+h = 50.0
+
+[[element]]
+id = "EditDisplay3"
+kind = "display"
+tag = "FM_05_MassFlow"
+unit = "mTon/hr"
+format = "#0.000000"
+editable = false
+x = 140.0
+y = 162.0
+w = 175.0
+h = 50.0
+
+[[element]]
+id = "EditDisplay4"
+kind = "display"
+tag = "FM_05_Volume_Rate"
+unit = "m³/hr"
+format = "#0.000000"
+editable = false
+x = 140.0
+y = 217.0
+w = 175.0
+h = 50.0
+
+[[element]]
+id = "EditDisplay5"
+kind = "display"
+tag = "FM_05_Mass_Total"
+unit = "mTon"
+format = "#0.000000"
+editable = false
+x = 140.0
+y = 272.0
+w = 175.0
+h = 50.0
+
+[[element]]
+id = "EditDisplay6"
+kind = "display"
+tag = "FM_05_Vol"
+unit = "m³"
+format = "#0.000000"
+editable = false
+x = 140.0
+y = 327.0
+w = 175.0
+h = 50.0
+
+[[element]]
+id = "EditDisplay7"
+kind = "display"
+tag = "FM_05_Mass_Inv"
+unit = "mTon"
+format = "#0.000000"
+editable = false
+x = 140.0
+y = 382.0
+w = 175.0
+h = 50.0
+
+[[element]]
+id = "EditDisplay8"
+kind = "display"
+tag = "FM_05_Vol_Inv"
+unit = "m³"
+format = "#0.000000"
+editable = false
+x = 140.0
+y = 437.0
+w = 175.0
+h = 50.0
+
+[[element]]
+id = "EditDisplay9"
+kind = "display"
+tag = "FM_05_External_Temperature"
+unit = "°C"
+format = "#0.000000"
+editable = true
+x = 140.0
+y = 492.0
+w = 175.0
+h = 50.0
+
+[[element]]
+id = "EditDisplay10"
+kind = "display"
+tag = "FM_05_External_Pressure"
+unit = "bar"
+format = "#0.000000"
+editable = true
+x = 140.0
+y = 547.0
+w = 175.0
+h = 50.0
+
+[[element]]
+id = "ContentControl"
+kind = "button"
+text = "Report"
+x = 26.0
+y = 622.0
+w = 82.0
+h = 42.0
+
+[[element]]
+id = "ContentControl1"
+kind = "button"
+text = "Reset Totalizer"
+x = 185.0
+y = 622.0
+w = 120.0
+h = 43.0
+
+[[element.on_click]]
+action = "write-tag"
+tag = "FM_05_Reset_Total"
+value = "1"
+mode = "pulse"

@@ -1,0 +1,38 @@
+name = "FM01_Trend"
+width = 1920.0
+height = 1080.0
+background = "linear-gradient(#6E7072, #282526)"
+legacy_id = "d42a5ce1-d48c-4b95-a756-62657e82770f"
+
+[[element]]
+id = "ContentControl1"
+kind = "button"
+text = "Manifold"
+x = 1795.0
+y = 1005.0
+w = 120.0
+h = 70.0
+
+[[element.on_click]]
+action = "open-screen"
+screen = "Manifold"
+
+[[element]]
+id = "DataAnalisysRT"
+kind = "trend"
+tags = ["FM_01_Density", "FM_01_External_Pressure", "FM_01_External_Temp", "FM_01_MassFlow", "FM_01_Mass_Inv", "FM_01_Mass_Total", "FM_01_Temp", "FM_01_Vol", "FM_01_Vol_Inv", "FM_01_Volume_Rate"]
+historian = "FM01"
+span_s = 3600
+x = 5.0
+y = 5.0
+w = 1910.0
+h = 485.0
+
+[[element]]
+id = "HistoricalViewer"
+kind = "history-table"
+source = "FM01"
+x = 5.0
+y = 500.0
+w = 1910.0
+h = 500.0

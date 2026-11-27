@@ -1,0 +1,45 @@
+[package]
+name = "moviclone-rt"
+description = "Moviclone runtime: loads a project and runs drivers, historian, alarms and the gateway in one process"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[lib]
+name = "moviclone_rt"
+path = "src/lib.rs"
+
+[[bin]]
+name = "moviclone-rt"
+path = "src/main.rs"
+
+[features]
+default = []
+# Forward historian and data-logger records to SQL Server (tiberius over rustls).
+mssql = ["moviclone-historian/mssql"]
+
+[dependencies]
+moviclone-model.workspace = true
+moviclone-check.workspace = true
+moviclone-tagdb.workspace = true
+moviclone-driver-modbus.workspace = true
+moviclone-sim.workspace = true
+moviclone-gateway.workspace = true
+moviclone-historian.workspace = true
+moviclone-alarms.workspace = true
+moviclone-studio.workspace = true
+tokio.workspace = true
+axum.workspace = true
+tower = { version = "0.5", features = ["util"] }
+clap.workspace = true
+anyhow.workspace = true
+serde_json.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["test-util"] }
+tokio-tungstenite = "0.24"
+futures-util.workspace = true
+tempfile = "3"
+tracing-subscriber.workspace = true

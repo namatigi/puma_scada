@@ -1,0 +1,887 @@
+[[tag]]
+name = "FM_01_Density"
+description = "FM01_Density"
+type = "f32"
+historian = "FM01"
+legacy_id = "eba96a81-4ea1-40c1-865c-77161b5027e3"
+
+[tag.address]
+kind = "modbus"
+driver = "flow-meters"
+station = "Flow_Meter_1"
+area = "holding-register"
+register = 249
+write = "single"
+
+[[tag]]
+name = "FM_01_External_Pressure"
+type = "f32"
+access = "read-write"
+historian = "FM01"
+legacy_id = "8d77d647-ae37-4857-acb1-6305ce11599f"
+
+[tag.address]
+kind = "modbus"
+driver = "flow-meters"
+station = "Flow_Meter_1"
+area = "holding-register"
+register = 451
+write = "single"
+
+[[tag]]
+name = "FM_01_External_Temp"
+type = "f32"
+access = "read-write"
+historian = "FM01"
+legacy_id = "a9eea405-ceb3-4a5e-b02c-7c30f535c99c"
+
+[tag.address]
+kind = "modbus"
+driver = "flow-meters"
+station = "Flow_Meter_1"
+area = "holding-register"
+register = 449
+write = "single"
+
+[[tag]]
+name = "FM_01_MassFlow"
+description = "FM01 Mass Flow Rate"
+type = "f32"
+historian = "FM01"
+legacy_id = "f1ecf2f8-e820-4ba9-afe2-5216926580a3"
+
+[tag.address]
+kind = "modbus"
+driver = "flow-meters"
+station = "Flow_Meter_1"
+area = "holding-register"
+register = 247
+write = "single"
+
+[[tag]]
+name = "FM_01_Mass_Inv"
+type = "f32"
+historian = "FM01"
+legacy_id = "f855bf63-bfcc-4aba-b629-6185cc0febe2"
+
+[tag.address]
+kind = "modbus"
+driver = "flow-meters"
+station = "Flow_Meter_1"
+area = "holding-register"
+register = 263
+write = "single"
+
+[[tag]]
+name = "FM_01_Mass_Total"
+description = "FM01 Mass Total"
+type = "f32"
+historian = "FM01"
+legacy_id = "82b23677-aeb7-49b7-a4f4-bbc73d85deae"
+
+[tag.address]
+kind = "modbus"
+driver = "flow-meters"
+station = "Flow_Meter_1"
+area = "holding-register"
+register = 259
+write = "single"
+
+[[tag]]
+name = "FM_01_Reset_Total"
+description = "FM01_Reset Totalizers"
+type = "bool"
+access = "read-write"
+legacy_id = "6830281e-4210-4e4c-92e0-0e1a38ff9b70"
+
+[tag.address]
+kind = "modbus"
+driver = "flow-meters"
+station = "Flow_Meter_1"
+area = "coil"
+register = 3
+
+[[tag]]
+name = "FM_01_START"
+description = "FM01_Start/Stop Totalizers"
+type = "bool"
+access = "read-write"
+legacy_id = "75057967-5ee7-4427-82e5-4cb0e6c2a5c8"
+
+[tag.address]
+kind = "modbus"
+driver = "flow-meters"
+station = "Flow_Meter_1"
+area = "coil"
+register = 2
+
+[[tag]]
+name = "FM_01_Temp"
+description = "FM01_Temperature"
+type = "f32"
+historian = "FM01"
+legacy_id = "1ecc861d-03fb-437f-8393-f69c5f37337c"
+
+[tag.address]
+kind = "modbus"
+driver = "flow-meters"
+station = "Flow_Meter_1"
+area = "holding-register"
+register = 251
+write = "single"
+
+[[tag]]
+name = "FM_01_Vol"
+description = "FM01_Volume"
+type = "f32"
+historian = "FM01"
+legacy_id = "562d4eed-a311-46cf-9e1c-1cbb10b3d22d"
+
+[tag.address]
+kind = "modbus"
+driver = "flow-meters"
+station = "Flow_Meter_1"
+area = "holding-register"
+register = 261
+write = "single"
+
+[[tag]]
+name = "FM_01_Vol_Inv"
+description = "FM_01_Volume_Invertory"
+type = "f32"
+historian = "FM01"
+legacy_id = "9e913e76-8dfa-488f-acf3-0953ccda38c7"
+
+[tag.address]
+kind = "modbus"
+driver = "flow-meters"
+station = "Flow_Meter_1"
+area = "holding-register"
+register = 265
+write = "single"
+
+[[tag]]
+name = "FM_01_Volume_Rate"
+description = "FM01_Volume Flow Rate"
+type = "f32"
+access = "read-write"
+historian = "FM01"
+legacy_id = "e5f9528c-bd4e-4400-991b-82e1cb2e4448"
+
+[tag.address]
+kind = "modbus"
+driver = "flow-meters"
+station = "Flow_Meter_1"
+area = "holding-register"
+register = 253
+write = "single"
+
+[[tag]]
+name = "FM_02_Density"
+description = "FM02_Density"
+type = "f32"
+historian = "FM02"
+legacy_id = "a022d262-c3a1-4ac0-9b6b-b550221a8b65"
+
+[tag.address]
+kind = "modbus"
+driver = "flow-meters"
+station = "Flow_Meter_2"
+area = "holding-register"
+register = 249
+write = "single"
+
+[[tag]]
+name = "FM_02_External_Pressure"
+type = "f32"
+access = "read-write"
+historian = "FM02"
+legacy_id = "b62b45d7-2438-4f9b-94fb-b3d13c4b5d14"
+
+[tag.address]
+kind = "modbus"
+driver = "flow-meters"
+station = "Flow_Meter_2"
+area = "holding-register"
+register = 451
+write = "single"
+
+[[tag]]
+name = "FM_02_External_Temperature"
+type = "f32"
+access = "read-write"
+historian = "FM02"
+legacy_id = "62e695dc-a3e2-49ed-b477-6ba1f1cd1708"
+
+[tag.address]
+kind = "modbus"
+driver = "flow-meters"
+station = "Flow_Meter_2"
+area = "holding-register"
+register = 449
+write = "single"
+
+[[tag]]
+name = "FM_02_MassFlow"
+description = "FM02 Mass Flow Rate"
+type = "f32"
+historian = "FM02"
+legacy_id = "b1596b2a-6155-4157-ad4d-86e8baaebadb"
+
+[tag.address]
+kind = "modbus"
+driver = "flow-meters"
+station = "Flow_Meter_2"
+area = "holding-register"
+register = 247
+write = "single"
+
+[[tag]]
+name = "FM_02_Mass_Inv"
+type = "f32"
+historian = "FM02"
+legacy_id = "59272f89-85e1-459f-804f-1fc73f0d0590"
+
+[tag.address]
+kind = "modbus"
+driver = "flow-meters"
+station = "Flow_Meter_2"
+area = "holding-register"
+register = 263
+write = "single"
+
+[[tag]]
+name = "FM_02_Mass_Total"
+description = "FM02 Mass Total"
+type = "f32"
+historian = "FM02"
+legacy_id = "24f80cc1-08cb-4709-b14b-f51ef6df50df"
+
+[tag.address]
+kind = "modbus"
+driver = "flow-meters"
+station = "Flow_Meter_2"
+area = "holding-register"
+register = 259
+write = "single"
+
+[[tag]]
+name = "FM_02_Reset_Total"
+description = "FM02_Reset Totalizers"
+type = "bool"
+access = "read-write"
+legacy_id = "849d2211-7506-472c-a733-3721aebcc583"
+
+[tag.address]
+kind = "modbus"
+driver = "flow-meters"
+station = "Flow_Meter_2"
+area = "coil"
+register = 3
+
+[[tag]]
+name = "FM_02_START"
+description = "FM02_Start/Stop Totalizers"
+type = "bool"
+access = "read-write"
+legacy_id = "ffca6895-8b6f-4a4e-b6ce-feb0b2f83360"
+
+[tag.address]
+kind = "modbus"
+driver = "flow-meters"
+station = "Flow_Meter_2"
+area = "coil"
+register = 2
+
+[[tag]]
+name = "FM_02_Temp"
+description = "FM02_Temperature"
+type = "f32"
+historian = "FM02"
+legacy_id = "fbad1013-b84f-4ff5-ab4a-4ce2ac7ec00f"
+
+[tag.address]
+kind = "modbus"
+driver = "flow-meters"
+station = "Flow_Meter_2"
+area = "holding-register"
+register = 251
+write = "single"
+
+[[tag]]
+name = "FM_02_Vol"
+description = "FM02_Volume"
+type = "f32"
+historian = "FM02"
+legacy_id = "d6f9fa53-3fda-4c6a-bc8c-98477261fc58"
+
+[tag.address]
+kind = "modbus"
+driver = "flow-meters"
+station = "Flow_Meter_2"
+area = "holding-register"
+register = 261
+write = "single"
+
+[[tag]]
+name = "FM_02_Vol_Inv"
+description = "FM_02_Volume_Invertory"
+type = "f32"
+historian = "FM02"
+legacy_id = "37a0c799-1b3b-40a5-bcf6-1d505cb8dd23"
+
+[tag.address]
+kind = "modbus"
+driver = "flow-meters"
+station = "Flow_Meter_2"
+area = "holding-register"
+register = 265
+write = "single"
+
+[[tag]]
+name = "FM_02_Volume_Rate"
+description = "FM02_Volume Flow Rate"
+type = "f32"
+historian = "FM02"
+legacy_id = "ba0a76e3-dfbd-4909-adf9-eb9b5955cc5b"
+
+[tag.address]
+kind = "modbus"
+driver = "flow-meters"
+station = "Flow_Meter_2"
+area = "holding-register"
+register = 253
+write = "single"
+
+[[tag]]
+name = "FM_03_Density"
+description = "FM03_Density"
+type = "f32"
+historian = "FM03"
+legacy_id = "9680e802-2742-4ffa-a7e2-973262526626"
+
+[tag.address]
+kind = "modbus"
+driver = "flow-meters"
+station = "Flow_Meter_3"
+area = "holding-register"
+register = 249
+write = "single"
+
+[[tag]]
+name = "FM_03_External_Pressure"
+type = "f32"
+access = "read-write"
+historian = "FM03"
+legacy_id = "f7d43bd4-f773-4e0b-8da0-65cbc07ab65c"
+
+[tag.address]
+kind = "modbus"
+driver = "flow-meters"
+station = "Flow_Meter_3"
+area = "holding-register"
+register = 451
+write = "single"
+
+[[tag]]
+name = "FM_03_External_Temperature"
+type = "f32"
+access = "read-write"
+historian = "FM03"
+legacy_id = "aa04ede1-9362-495d-b337-b90a510a325e"
+
+[tag.address]
+kind = "modbus"
+driver = "flow-meters"
+station = "Flow_Meter_3"
+area = "holding-register"
+register = 449
+write = "single"
+
+[[tag]]
+name = "FM_03_MassFlow"
+description = "FM03 Mass Flow Rate"
+type = "f32"
+historian = "FM03"
+legacy_id = "8581f1ed-2587-4b0e-9860-52cbc00082c2"
+
+[tag.address]
+kind = "modbus"
+driver = "flow-meters"
+station = "Flow_Meter_3"
+area = "holding-register"
+register = 247
+write = "single"
+
+[[tag]]
+name = "FM_03_Mass_Inv"
+type = "f32"
+historian = "FM03"
+legacy_id = "771cf23b-3038-465d-bcf8-8909d56c34e0"
+
+[tag.address]
+kind = "modbus"
+driver = "flow-meters"
+station = "Flow_Meter_3"
+area = "holding-register"
+register = 263
+write = "single"
+
+[[tag]]
+name = "FM_03_Mass_Total"
+description = "FM03 Mass Total"
+type = "f32"
+historian = "FM03"
+legacy_id = "6ba4f602-7004-4b21-ad53-d5520ad6fa17"
+
+[tag.address]
+kind = "modbus"
+driver = "flow-meters"
+station = "Flow_Meter_3"
+area = "holding-register"
+register = 259
+write = "single"
+
+[[tag]]
+name = "FM_03_Reset_Total"
+description = "FM03_Reset Totalizers"
+type = "bool"
+access = "read-write"
+legacy_id = "0c699eaf-eaac-4686-ba93-83b3ea0ee8db"
+
+[tag.address]
+kind = "modbus"
+driver = "flow-meters"
+station = "Flow_Meter_3"
+area = "coil"
+register = 3
+
+[[tag]]
+name = "FM_03_START"
+description = "FM03_Start/Stop Totalizers"
+type = "bool"
+access = "read-write"
+legacy_id = "9c36c8f5-f6f4-4e10-bd8d-ba56156436ac"
+
+[tag.address]
+kind = "modbus"
+driver = "flow-meters"
+station = "Flow_Meter_3"
+area = "coil"
+register = 2
+
+[[tag]]
+name = "FM_03_Temp"
+description = "FM03_Temperature"
+type = "f32"
+historian = "FM03"
+legacy_id = "0f046a5f-677d-4688-8c56-c6687597c46f"
+
+[tag.address]
+kind = "modbus"
+driver = "flow-meters"
+station = "Flow_Meter_3"
+area = "holding-register"
+register = 251
+write = "single"
+
+[[tag]]
+name = "FM_03_Vol"
+description = "FM03_Volume"
+type = "f32"
+historian = "FM03"
+legacy_id = "be89235f-66a3-487b-abbd-bce06b7a9d6e"
+
+[tag.address]
+kind = "modbus"
+driver = "flow-meters"
+station = "Flow_Meter_3"
+area = "holding-register"
+register = 261
+write = "single"
+
+[[tag]]
+name = "FM_03_Vol_Inv"
+description = "FM_03_Volume_Invertory"
+type = "f32"
+historian = "FM03"
+legacy_id = "0010cf1d-f7d2-49c8-9818-9ad4e1c1036d"
+
+[tag.address]
+kind = "modbus"
+driver = "flow-meters"
+station = "Flow_Meter_3"
+area = "holding-register"
+register = 265
+write = "single"
+
+[[tag]]
+name = "FM_03_Volume_Rate"
+description = "FM03_Volume Flow Rate"
+type = "f32"
+historian = "FM03"
+legacy_id = "4a59910e-942b-46df-8ce3-ffa6ea51e460"
+
+[tag.address]
+kind = "modbus"
+driver = "flow-meters"
+station = "Flow_Meter_3"
+area = "holding-register"
+register = 253
+write = "single"
+
+[[tag]]
+name = "FM_04_Density"
+description = "FM04_Density"
+type = "f32"
+historian = "FM04"
+legacy_id = "633897ec-7fd7-4347-a163-8aded95d3c4f"
+
+[tag.address]
+kind = "modbus"
+driver = "flow-meters"
+station = "Flow_Meter_4"
+area = "holding-register"
+register = 249
+write = "single"
+
+[[tag]]
+name = "FM_04_External_Pressure"
+type = "f32"
+access = "read-write"
+historian = "FM04"
+legacy_id = "db55673f-23cc-4ae3-9f17-5e4422701abd"
+
+[tag.address]
+kind = "modbus"
+driver = "flow-meters"
+station = "Flow_Meter_4"
+area = "holding-register"
+register = 451
+write = "single"
+
+[[tag]]
+name = "FM_04_External_Temperature"
+type = "f32"
+access = "read-write"
+historian = "FM04"
+legacy_id = "4163df4e-b6ce-4b4f-9d79-9f710c598507"
+
+[tag.address]
+kind = "modbus"
+driver = "flow-meters"
+station = "Flow_Meter_4"
+area = "holding-register"
+register = 449
+write = "single"
+
+[[tag]]
+name = "FM_04_MassFlow"
+description = "FM04 Mass Flow Rate"
+type = "f32"
+historian = "FM04"
+legacy_id = "f0791415-3d43-45d0-876c-ba97e344e0ac"
+
+[tag.address]
+kind = "modbus"
+driver = "flow-meters"
+station = "Flow_Meter_4"
+area = "holding-register"
+register = 247
+write = "single"
+
+[[tag]]
+name = "FM_04_Mass_Inv"
+type = "f32"
+historian = "FM04"
+legacy_id = "7c654a31-9665-4b19-aef0-4498495a60a6"
+
+[tag.address]
+kind = "modbus"
+driver = "flow-meters"
+station = "Flow_Meter_4"
+area = "holding-register"
+register = 263
+write = "single"
+
+[[tag]]
+name = "FM_04_Mass_Total"
+description = "FM04 Mass Total"
+type = "f32"
+historian = "FM04"
+legacy_id = "a4df8ea0-d959-4255-8fca-20e341abe9d8"
+
+[tag.address]
+kind = "modbus"
+driver = "flow-meters"
+station = "Flow_Meter_4"
+area = "holding-register"
+register = 259
+write = "single"
+
+[[tag]]
+name = "FM_04_Reset_Total"
+description = "FM04_Reset Totalizers"
+type = "bool"
+access = "read-write"
+legacy_id = "d43e27b6-4096-418c-bcf2-82e47b8078ae"
+
+[tag.address]
+kind = "modbus"
+driver = "flow-meters"
+station = "Flow_Meter_4"
+area = "coil"
+register = 3
+
+[[tag]]
+name = "FM_04_START"
+description = "FM04_Start/Stop Totalizers"
+type = "bool"
+access = "read-write"
+legacy_id = "60d5bd8a-dc37-4648-a628-b4a3ae0ee713"
+
+[tag.address]
+kind = "modbus"
+driver = "flow-meters"
+station = "Flow_Meter_4"
+area = "coil"
+register = 2
+
+[[tag]]
+name = "FM_04_Temp"
+description = "FM04_Temperature"
+type = "f32"
+historian = "FM04"
+legacy_id = "b59e26f6-a8b4-4ab0-9845-40e9f3c7cce9"
+
+[tag.address]
+kind = "modbus"
+driver = "flow-meters"
+station = "Flow_Meter_4"
+area = "holding-register"
+register = 251
+write = "single"
+
+[[tag]]
+name = "FM_04_Vol"
+description = "FM04_Volume"
+type = "f32"
+historian = "FM04"
+legacy_id = "455e91d0-8450-4ef2-bc73-0ed1621a9dbd"
+
+[tag.address]
+kind = "modbus"
+driver = "flow-meters"
+station = "Flow_Meter_4"
+area = "holding-register"
+register = 261
+write = "single"
+
+[[tag]]
+name = "FM_04_Vol_Inv"
+description = "FM_04_Volume_Invertory"
+type = "f32"
+historian = "FM04"
+legacy_id = "7f624461-30f8-4207-ab92-04528653b306"
+
+[tag.address]
+kind = "modbus"
+driver = "flow-meters"
+station = "Flow_Meter_4"
+area = "holding-register"
+register = 265
+write = "single"
+
+[[tag]]
+name = "FM_04_Volume_Rate"
+description = "FM04_Volume Flow Rate"
+type = "f32"
+historian = "FM04"
+legacy_id = "5edf1575-02e7-4d28-9822-fb97dbff1070"
+
+[tag.address]
+kind = "modbus"
+driver = "flow-meters"
+station = "Flow_Meter_4"
+area = "holding-register"
+register = 253
+write = "single"
+
+[[tag]]
+name = "Flow_Direction"
+type = "f32"
+access = "read-write"
+legacy_id = "60927c2c-acd6-4b0e-a483-2385c09a5774"
+
+[tag.address]
+kind = "modbus"
+driver = "flow-meters"
+station = "Flow_Meter_1"
+area = "holding-register"
+register = 422
+write = "single"
+
+[[tag]]
+name = "FM_05_Density"
+description = "FM05_Density"
+type = "f32"
+historian = "FM05"
+
+[tag.address]
+kind = "modbus"
+driver = "flow-meters"
+station = "Flow_Meter_5"
+area = "holding-register"
+register = 249
+write = "single"
+
+[[tag]]
+name = "FM_05_External_Pressure"
+type = "f32"
+access = "read-write"
+historian = "FM05"
+
+[tag.address]
+kind = "modbus"
+driver = "flow-meters"
+station = "Flow_Meter_5"
+area = "holding-register"
+register = 451
+write = "single"
+
+[[tag]]
+name = "FM_05_External_Temperature"
+type = "f32"
+access = "read-write"
+historian = "FM05"
+
+[tag.address]
+kind = "modbus"
+driver = "flow-meters"
+station = "Flow_Meter_5"
+area = "holding-register"
+register = 449
+write = "single"
+
+[[tag]]
+name = "FM_05_MassFlow"
+description = "FM05 Mass Flow Rate"
+type = "f32"
+historian = "FM05"
+
+[tag.address]
+kind = "modbus"
+driver = "flow-meters"
+station = "Flow_Meter_5"
+area = "holding-register"
+register = 247
+write = "single"
+
+[[tag]]
+name = "FM_05_Mass_Inv"
+type = "f32"
+historian = "FM05"
+
+[tag.address]
+kind = "modbus"
+driver = "flow-meters"
+station = "Flow_Meter_5"
+area = "holding-register"
+register = 263
+write = "single"
+
+[[tag]]
+name = "FM_05_Mass_Total"
+description = "FM05 Mass Total"
+type = "f32"
+historian = "FM05"
+
+[tag.address]
+kind = "modbus"
+driver = "flow-meters"
+station = "Flow_Meter_5"
+area = "holding-register"
+register = 259
+write = "single"
+
+[[tag]]
+name = "FM_05_Reset_Total"
+description = "FM05_Reset Totalizers"
+type = "bool"
+access = "read-write"
+
+[tag.address]
+kind = "modbus"
+driver = "flow-meters"
+station = "Flow_Meter_5"
+area = "coil"
+register = 3
+
+[[tag]]
+name = "FM_05_START"
+description = "FM05_Start/Stop Totalizers"
+type = "bool"
+access = "read-write"
+
+[tag.address]
+kind = "modbus"
+driver = "flow-meters"
+station = "Flow_Meter_5"
+area = "coil"
+register = 2
+
+[[tag]]
+name = "FM_05_Temp"
+description = "FM05_Temperature"
+type = "f32"
+historian = "FM05"
+
+[tag.address]
+kind = "modbus"
+driver = "flow-meters"
+station = "Flow_Meter_5"
+area = "holding-register"
+register = 251
+write = "single"
+
+[[tag]]
+name = "FM_05_Vol"
+description = "FM05_Volume"
+type = "f32"
+historian = "FM05"
+
+[tag.address]
+kind = "modbus"
+driver = "flow-meters"
+station = "Flow_Meter_5"
+area = "holding-register"
+register = 261
+write = "single"
+
+[[tag]]
+name = "FM_05_Vol_Inv"
+description = "FM_05_Volume_Invertory"
+type = "f32"
+historian = "FM05"
+
+[tag.address]
+kind = "modbus"
+driver = "flow-meters"
+station = "Flow_Meter_5"
+area = "holding-register"
+register = 265
+write = "single"
+
+[[tag]]
+name = "FM_05_Volume_Rate"
+description = "FM05_Volume Flow Rate"
+type = "f32"
+historian = "FM05"
+
+[tag.address]
+kind = "modbus"
+driver = "flow-meters"
+station = "Flow_Meter_5"
+area = "holding-register"
+register = 253
+write = "single"

@@ -1,0 +1,108 @@
+// Moviclone's own 16x16 line icons (drawn for this project; no third-party artwork).
+// icon('save') returns an <svg> element; colours come from CSS (currentColor),
+// with optional accent fills via the "a" (accent) and "g" (green) / "r" (red) classes.
+
+const P = {
+  undo: '<path d="M5 4L2 7l3 3"/><path d="M2.5 7H10a3.5 3.5 0 010 7H7"/>',
+  redo: '<path d="M11 4l3 3-3 3"/><path d="M13.5 7H6a3.5 3.5 0 000 7h3"/>',
+  new: '<path d="M4 1.5h5.5L13 5v9.5H4z"/><path d="M9.5 1.5V5H13"/><path class="a" d="M6.5 9.5h4M8.5 7.5v4"/>',
+  open: '<path d="M1.5 4.5v9h11l2-6h-11l-2 6"/><path d="M1.5 4.5V3h4l1 1.5h5V7"/>',
+  save: '<path d="M2 2h10l2 2v10H2z"/><path d="M5 2v4h5V2"/><path d="M4.5 14V9.5h7V14"/>',
+  saveall: '<path d="M4 4h8l2 2v8H4z"/><path d="M2 12V2h9"/><path d="M6.5 4v3h4V4"/>',
+  run: '<path class="g fill" d="M4 2.5l9.5 5.5L4 13.5z"/>',
+  stop: '<path class="r fill" d="M3.5 3.5h9v9h-9z"/>',
+  'align-left': '<path d="M2 1.5v13"/><path class="fillish" d="M4 3.5h8v3H4zM4 9.5h5v3H4z"/>',
+  'align-center': '<path d="M8 1.5v13"/><path class="fillish" d="M3 3.5h10v3H3zM5 9.5h6v3H5z"/>',
+  'align-right': '<path d="M14 1.5v13"/><path class="fillish" d="M4 3.5h8v3H4zM7 9.5h5v3H7z"/>',
+  'align-top': '<path d="M1.5 2h13"/><path class="fillish" d="M3.5 4h3v8h-3zM9.5 4h3v5h-3z"/>',
+  'align-middle': '<path d="M1.5 8h13"/><path class="fillish" d="M3.5 3h3v10h-3zM9.5 5h3v6h-3z"/>',
+  'align-bottom': '<path d="M1.5 14h13"/><path class="fillish" d="M3.5 4h3v8h-3zM9.5 7h3v5h-3z"/>',
+  'dist-h': '<path d="M1.5 2v12M14.5 2v12"/><path class="fillish" d="M4 5h2.5v6H4zM9.5 5H12v6H9.5z"/>',
+  'dist-v': '<path d="M2 1.5h12M2 14.5h12"/><path class="fillish" d="M5 4h6v2.5H5zM5 9.5h6V12H5z"/>',
+  'same-w': '<path class="fillish" d="M2.5 3h11v3h-11zM2.5 10h11v3h-11z"/>',
+  'same-h': '<path class="fillish" d="M3 2.5h3v11H3zM10 2.5h3v11h-3z"/>',
+  'same-size': '<path class="fillish" d="M2 2h5v5H2zM9 9h5v5H9z"/><path d="M9 2h5v5H9zM2 9h5v5H2z"/>',
+  front: '<path d="M2 2h7v7H2z"/><path class="fillish a" d="M6 6h8v8H6z"/>',
+  back: '<path class="fillish a" d="M2 2h8v8H2z"/><path d="M6 6h8v8H6z"/>',
+  grid: '<path d="M2 2h12v12H2zM6 2v12M10 2v12M2 6h12M2 10h12"/>',
+  snap: '<path d="M4 2v6a4 4 0 008 0V2"/><path class="a" d="M4 2h2.5v3H4zM9.5 2H12v3H9.5z"/>',
+  bold: '<path d="M4 2.5h4.5a2.75 2.75 0 010 5.5H4zM4 8h5a3 3 0 010 6H4z"/>',
+  italic: '<path d="M7 2.5h5M4 13.5h5M10 2.5l-4 11"/>',
+  cut: '<circle cx="4.5" cy="12" r="2"/><circle cx="11.5" cy="12" r="2"/><path d="M5.5 10.5L11 2M10.5 10.5L5 2"/>',
+  copy: '<path d="M5 5h8.5v9.5H5z"/><path d="M3 11V2h8"/>',
+  paste: '<path d="M3 3h2M11 3h2v11.5H3V3"/><path d="M5.5 1.5h5v3h-5z"/>',
+  delete: '<path d="M2.5 4h11M6 4V2h4v2M4 4l1 10h6l1-10"/>',
+  search: '<circle cx="6.5" cy="6.5" r="4.5"/><path d="M10 10l4.5 4.5"/>',
+  folder: '<path class="fold" d="M1.5 3.5h5l1.5 1.5h6.5v8.5h-13z"/>',
+  'folder-open': '<path class="fold" d="M1.5 3.5h5l1.5 1.5h5v2h-9l-2.5 6.5h-0.5z"/><path class="fold" d="M4.5 7h10l-2.5 6.5H2z"/>',
+  screen: '<path d="M1.5 2.5h13v9h-13z"/><path d="M5 14h6M8 11.5V14"/><path class="a fillish" d="M3.5 4.5h4v3h-4z"/>',
+  tags: '<path d="M1.5 2.5h5l7 7-5 5-7-7z"/><circle class="a" cx="5" cy="6" r="1.2"/>',
+  tag: '<path d="M2 2h5.5l6.5 6.5-5.5 5.5L2 7.5z"/><circle cx="5" cy="5" r="1"/>',
+  driver: '<path d="M2 4h12v8H2z"/><path d="M4.5 4V2M11.5 4V2M5 7.5h1M10 7.5h1M5 10h6"/>',
+  alarm: '<path d="M8 2a4 4 0 014 4v3.5l1.5 2.5h-11L4 9.5V6a4 4 0 014-4z"/><path d="M6.5 13.5a1.5 1.5 0 003 0"/>',
+  historian: '<path d="M2 13.5h12"/><path class="a" d="M2.5 11l3-4 3 2 5-6"/>',
+  database: '<ellipse cx="8" cy="3.5" rx="5.5" ry="2"/><path d="M2.5 3.5v9c0 1.1 2.5 2 5.5 2s5.5-.9 5.5-2v-9M2.5 8c0 1.1 2.5 2 5.5 2s5.5-.9 5.5-2"/>',
+  settings: '<circle cx="8" cy="8" r="2.2"/><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M3.4 12.6l1.4-1.4M11.2 4.8l1.4-1.4"/>',
+  logic: '<path d="M2 4h4v8H2zM10 6h4v4h-4zM6 8h4"/>',
+  scheduler: '<circle cx="8" cy="8.5" r="5.5"/><path d="M8 5.5v3l2 1.5"/>',
+  report: '<path d="M3.5 1.5h6l3 3v10h-9z"/><path d="M5.5 8h5M5.5 10.5h5M5.5 5.5h2"/>',
+  params: '<path d="M2 4h7M12 4h2M2 12h2M7 12h7M2 8h4M9 8h5"/><circle cx="10.5" cy="4" r="1.5"/><circle cx="5.5" cy="12" r="1.5"/><circle cx="7.5" cy="8" r="1.5"/>',
+  texts: '<path d="M2.5 3.5h11M8 3.5v10M5.5 13.5h5"/>',
+  xref: '<circle cx="4" cy="4" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="4" r="2"/><path d="M6 4h4M5.4 5.4l5.2 5.2"/>',
+  events: '<path class="a" d="M9 1.5L3.5 9H8l-1 5.5L12.5 7H8z"/>',
+  recipes: '<path d="M3 2h10v12H3z"/><path d="M5.5 5h5M5.5 8h5M5.5 11h3"/>',
+  users: '<circle cx="6" cy="5" r="2.5"/><path d="M1.5 14c0-3 2-4.5 4.5-4.5S10.5 11 10.5 14"/><circle cx="11.5" cy="5.5" r="2"/><path d="M11.5 9c2 0 3 1.5 3 4"/>',
+  server: '<path d="M2.5 2h11v5h-11zM2.5 9h11v5h-11z"/><path class="a" d="M4.5 4.5h1M4.5 11.5h1"/>',
+  structure: '<path d="M2 2h5v4H2zM9 10h5v4H9zM4.5 6v6H9"/>',
+  units: '<path d="M2 12L12 2l2 2L4 14z"/><path d="M5 9l1.5 1.5M7 7l1.5 1.5M9 5l1.5 1.5"/>',
+  views: '<path d="M2 3h12v10H2zM2 6h12M6 6v7"/>',
+  redundancy: '<path d="M2 3h5v4H2zM9 9h5v4H9z"/><path d="M4.5 7v3.5H9M11.5 9V5.5H7"/>',
+  client: '<path d="M1.5 3h13v8h-13zM5 13.5h6"/>',
+  loggers: '<path d="M3 2h10v12H3zM3 6h10M3 10h10M7 2v12"/>',
+  label: '<path d="M3 3.5h10M8 3.5v10"/>',
+  display: '<path d="M1.5 4h13v8h-13z"/><path class="a" d="M8 6.5v3M10 6.5v3h1.5"/>',
+  button: '<path d="M1.5 4.5h13v7h-13z"/><path d="M4.5 8h7"/>',
+  pipeline: '<path class="thick" d="M2 12V5.5a2 2 0 012-2h10"/>',
+  symbol: '<path d="M2 6h3v4H2zM11 6h3v4h-3zM5 8h6"/><path class="a" d="M6.5 5l3 6M9.5 5l-3 6"/>',
+  trend: '<path d="M2 2v12h12"/><path class="a" d="M3.5 11l3-4 2.5 2L13.5 4"/>',
+  table: '<path d="M2 3h12v10H2zM2 6h12M2 9.5h12M6 3v10"/>',
+  chevron: '<path d="M6 4l4 4-4 4"/>',
+  'chevron-down': '<path d="M4 6l4 4 4-4"/>',
+  close: '<path d="M4 4l8 8M12 4l-8 8"/>',
+  plus: '<path d="M8 3v10M3 8h10"/>',
+  minus: '<path d="M3 8h10"/>',
+  error: '<circle class="r fill" cx="8" cy="8" r="6.5"/><path class="w" d="M5.5 5.5l5 5M10.5 5.5l-5 5"/>',
+  warning: '<path class="y fill" d="M8 1.5l7 12.5H1z"/><path class="k" d="M8 6v4M8 11.5v1"/>',
+  note: '<circle class="b fill" cx="8" cy="8" r="6.5"/><path class="w" d="M8 7v4.5M8 4.5v1"/>',
+  ok: '<circle class="g fill" cx="8" cy="8" r="6.5"/><path class="w" d="M5 8.2l2 2 4-4.2"/>',
+  pin: '<path d="M6 2h4l-.5 4 2.5 2.5H4L6.5 6z"/><path d="M8 8.5V14"/>',
+  categorized: '<path d="M2 3h5M2 8h5M2 13h5M9 3h5M9 8h5M9 13h5"/>',
+  alpha: '<path d="M2 13l3-9 3 9M3 10h4M10 4h4l-4 9h4"/>',
+  where: '<circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5l3.5 3.5M5 7h4M7 5v4"/>',
+  live: '<circle class="g fill" cx="8" cy="8" r="3"/><path d="M3.5 3.5a6.4 6.4 0 000 9M12.5 3.5a6.4 6.4 0 010 9"/>',
+  duplicate: '<path d="M2 2h8v8H2z"/><path class="a" d="M6 6h8v8H6z"/>',
+  fit: '<path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"/>',
+  rotate: '<path d="M13 8a5 5 0 11-1.5-3.5"/><path d="M12 1.5v3.5H8.5"/>',
+  lock: '<path d="M3.5 7.5h9v7h-9z"/><path d="M5.5 7.5V5a2.5 2.5 0 015 0v2.5"/>',
+  objects: '<path d="M2 2.5h3v3H2zM2 10.5h3v3H2zM7 4h7M7 12h7M3.5 5.5v5"/>',
+  command: '<path d="M2 3h12v10H2z"/><path class="a" d="M4.5 6l2 2-2 2M8 10h3.5"/>',
+  log: '<path d="M3 2h10v12H3z"/><path d="M5 5h6M5 8h6M5 11h4"/>',
+  animation: '<path d="M2 12c2-6 4-6 6 0s4 6 6 0"/><circle class="a fill" cx="8" cy="12" r="1.2"/>',
+  source: '<path d="M5 4L1.5 8 5 12M11 4l3.5 4-3.5 4M9.5 2.5l-3 11"/>',
+  palette: '<path d="M2 3h12v10H2z"/><path d="M4.5 6.5h7"/><path class="a" d="M4.5 9.5h4"/>',
+};
+
+const NS = 'http://www.w3.org/2000/svg';
+
+export function icon(name, { size = 16, title } = {}) {
+  const svg = document.createElementNS(NS, 'svg');
+  svg.setAttribute('viewBox', '0 0 16 16');
+  svg.setAttribute('width', size);
+  svg.setAttribute('height', size);
+  svg.setAttribute('class', `ic ic-${name}`);
+  svg.setAttribute('aria-hidden', 'true');
+  svg.innerHTML = (title ? `<title>${title}</title>` : '') + (P[name] ?? P.symbol);
+  return svg;
+}
+
+export const ICON_NAMES = Object.keys(P);

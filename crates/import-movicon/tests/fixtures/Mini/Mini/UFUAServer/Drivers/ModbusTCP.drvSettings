@@ -1,0 +1,22 @@
+<DefaultName>
+  <xs:schema id="DefaultName" xmlns:xs="http://www.w3.org/2001/XMLSchema"><xs:element name="DefaultName" /></xs:schema>
+  <TcpChannelSettings>
+    <OID>1</OID>
+    <TcpChannelSettingsHostName>10.0.0.5</TcpChannelSettingsHostName>
+    <TcpChannelSettingsHostPort>502</TcpChannelSettingsHostPort>
+  </TcpChannelSettings>
+  <ChannelSettings>
+    <OID>1</OID>
+    <Name>Field Bus</Name>
+    <Timeout>3000</Timeout>
+    <KeepOpened>true</KeepOpened>
+  </ChannelSettings>
+  <StationSettings>
+    <OID>1</OID>
+    <Name>Meter_1</Name>
+    <Channel>Field Bus</Channel>
+    <MaxRetriesBeforeError>3</MaxRetriesBeforeError>
+    <StationID>7</StationID>
+    <AddressType>1</AddressType>
+  </StationSettings>
+</DefaultName>

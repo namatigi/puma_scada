@@ -1,0 +1,254 @@
+name = "FM_02"
+width = 320.0
+height = 680.0
+background = "#3F3F3F"
+legacy_id = "a6dfa4fc-43e0-4bb8-a291-bd5724820222"
+
+[[element]]
+id = "EditDisplay"
+kind = "display"
+tag = "FM_02_Density"
+unit = "kg/m³"
+format = "#0.000000"
+editable = true
+x = 140.0
+y = 56.0
+w = 175.0
+h = 50.0
+
+[[element]]
+id = "EditDisplay2"
+kind = "display"
+tag = "FM_02_Temp"
+unit = "°C"
+format = "#0.000000"
+editable = true
+x = 140.0
+y = 110.0
+w = 175.0
+h = 50.0
+
+[[element]]
+id = "EditDisplay3"
+kind = "display"
+tag = "FM_02_MassFlow"
+unit = "mTon/hr"
+format = "#0.000000"
+editable = true
+x = 140.0
+y = 165.0
+w = 175.0
+h = 50.0
+
+[[element]]
+id = "EditDisplay4"
+kind = "display"
+tag = "FM_02_Volume_Rate"
+unit = "m³/hr"
+format = "#0.000000"
+editable = true
+x = 140.0
+y = 220.0
+w = 175.0
+h = 50.0
+
+[[element]]
+id = "EditDisplay5"
+kind = "display"
+tag = "FM_02_Vol"
+unit = "m³"
+format = "#0.000000"
+editable = true
+x = 140.0
+y = 330.0
+w = 175.0
+h = 50.0
+
+[[element]]
+id = "TextBox"
+kind = "label"
+text = "Temperature"
+x = 13.0
+y = 120.0
+w = 100.0
+h = 30.0
+
+[[element]]
+id = "TextBox1"
+kind = "label"
+text = "Density"
+x = 13.0
+y = 66.0
+w = 100.0
+h = 30.0
+
+[[element]]
+id = "TextBox2"
+kind = "label"
+text = "Mass Flow Rate"
+x = 13.0
+y = 175.0
+w = 100.0
+h = 30.0
+
+[[element]]
+id = "TextBox3"
+kind = "label"
+text = "Volume Flow Rate"
+x = 13.0
+y = 230.0
+w = 100.0
+h = 30.0
+
+[[element]]
+id = "TextBox4"
+kind = "label"
+text = "Mass Total"
+x = 13.0
+y = 285.0
+w = 100.0
+h = 30.0
+
+[[element]]
+id = "TextBox5"
+kind = "label"
+text = "Volume Total"
+x = 13.0
+y = 340.0
+w = 100.0
+h = 30.0
+
+[[element]]
+id = "EditDisplay6"
+kind = "display"
+tag = "FM_02_Mass_Total"
+unit = "mTon"
+format = "#0.000000"
+editable = true
+x = 140.0
+y = 275.0
+w = 175.0
+h = 50.0
+
+[[element]]
+id = "ContentControl1"
+kind = "button"
+text = "Reset Totalizer"
+x = 195.0
+y = 628.5
+w = 100.0
+h = 35.0
+
+[[element.on_click]]
+action = "write-tag"
+tag = "FM_02_Reset_Total"
+value = "1"
+mode = "pulse"
+
+[[element]]
+id = "TextBox8"
+kind = "label"
+text = "Gasoil"
+x = 110.0
+y = 9.0
+w = 100.0
+h = 38.0
+
+[[element]]
+id = "EditDisplay7"
+kind = "display"
+tag = "FM_02_Vol_Inv"
+unit = "m³"
+format = "#0.000000"
+editable = true
+x = 140.0
+y = 439.0
+w = 175.0
+h = 50.0
+
+[[element]]
+id = "TextBox9"
+kind = "label"
+text = "Mass Total Inventory"
+x = -0.5
+y = 394.0
+w = 127.0
+h = 30.0
+
+[[element]]
+id = "TextBox10"
+kind = "label"
+text = "Volume Total Invetory"
+x = 2.0
+y = 449.0
+w = 122.0
+h = 30.0
+
+[[element]]
+id = "EditDisplay8"
+kind = "display"
+tag = "FM_02_Mass_Inv"
+unit = "mTon"
+format = "#0.000000"
+editable = true
+x = 140.0
+y = 384.0
+w = 175.0
+h = 50.0
+
+[[element]]
+id = "ContentControl2"
+kind = "button"
+text = "Report"
+x = 41.0
+y = 628.5
+w = 100.0
+h = 35.0
+
+[[element.on_click]]
+action = "report"
+report = "Report2"
+tags = ["FM_01_Density"]
+output_dir = 'C:\Users\Petrogas\Desktop\Gasoil_Report'
+
+[[element]]
+id = "TextBox02"
+kind = "label"
+text = "External Temperature"
+x = 2.0
+y = 507.0
+w = 122.0
+h = 30.0
+
+[[element]]
+id = "EditDisplay9"
+kind = "display"
+tag = "FM_02_External_Temperature"
+unit = "°C"
+format = "#0.000000"
+editable = true
+x = 140.0
+y = 502.0
+w = 175.0
+h = 50.0
+
+[[element]]
+id = "EditDisplay10"
+kind = "display"
+tag = "FM_02_External_Pressure"
+unit = "bar"
+format = "#0.000000"
+editable = true
+x = 140.0
+y = 568.0
+w = 175.0
+h = 50.0
+
+[[element]]
+id = "TextBox03"
+kind = "label"
+text = "External Pressure"
+x = 10.0
+y = 579.0
+w = 122.0
+h = 30.0

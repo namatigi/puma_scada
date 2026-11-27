@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Moviclone shared tests</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="theme.css">
+  <style>
+    body { margin: 0; padding: 20px; background: var(--mc-bg); color: var(--mc-text); font: 14px/1.5 var(--mc-font); }
+    h1 { margin: 0 0 4px; font-size: 20px; }
+    h2 { margin: 18px 0 4px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--mc-text-dim); }
+    #summary { font-size: 18px; font-weight: 700; }
+    #summary.pass { color: var(--mc-ok); }
+    #summary.fail { color: var(--mc-bad); }
+    .ok { color: #b9e4c6; }
+    .bad { color: #ff8a80; font-weight: 600; }
+    #stage { width: 480px; height: 270px; margin-top: 16px; border: 1px solid var(--mc-border); }
+  </style>
+</head>
+<body>
+  <h1>Moviclone shared module tests</h1>
+  <div id="summary">Running…</div>
+  <div id="results"></div>
+  <div id="stage"></div>
+  <script type="module" src="tests.js"></script>
+</body>
+</html>

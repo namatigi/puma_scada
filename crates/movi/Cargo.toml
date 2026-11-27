@@ -1,0 +1,14 @@
+[package]
+name = "movi"
+description = "Moviclone command line: import and build projects"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+moviclone-model.workspace = true
+moviclone-check.workspace = true
+moviclone-import-movicon.workspace = true
+clap.workspace = true
+anyhow.workspace = true
+serde_json.workspace = true
