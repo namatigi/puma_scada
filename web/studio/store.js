@@ -35,6 +35,9 @@ export function createStore() {
   let project = null;
   let diagnostics = [];
   const saved = new Map(); // part -> JSON string as last loaded/saved
+  // part -> version of its file on disk when last loaded/saved (null: the
+  // server sent none, so saves are not checked).
+  let versions = null;
   const history = new Map(); // part -> {undo: [], redo: []}
   let coalesce = null; // {part, key, until} for nudges and typing
 
@@ -84,8 +87,9 @@ export function createStore() {
     get project() { return project; },
     get diagnostics() { return diagnostics; },
 
-    load(p, diags = []) {
+    load(p, diags = [], fileVersions = null) {
       project = p;
+      versions = fileVersions ? new Map(Object.entries(fileVersions)) : null;
       project.tags ??= [];
       project.alarms ??= [];
       project.screens ??= [];
@@ -102,6 +106,27 @@ export function createStore() {
 
     getPart,
     parts,
+
+    /**
+     * The version a save of `part` is based on: its file's version when loaded
+     * or last saved, "absent" for a part that has no file yet, or undefined when
+     * the server does not report versions.
+     */
+    version(part) {
+      if (!versions) return undefined;
+      return versions.get(part) ?? 'absent';
+    },
+    setVersion(part, v) {
+      if (!versions) return;
+      if (v) versions.set(part, v);
+      else versions.delete(part);
+    },
+    /** Parts whose file version on disk differs from the one this window holds. */
+    changedOnDisk(diskVersions) {
+      if (!versions || !diskVersions) return [];
+      const keys = new Set([...versions.keys(), ...Object.keys(diskVersions)]);
+      return [...keys].filter((k) => (versions.get(k) ?? 'absent') !== (diskVersions[k] ?? 'absent'));
+    },
 
     isDirty(part) {
       if (!saved.has(part)) return getPart(part) !== undefined;

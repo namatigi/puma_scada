@@ -22,11 +22,18 @@
 //! still saved (engineers save work in progress); the diagnostics say what is wrong.
 //! Screen names that differ only in letter case are refused with 409, because
 //! they would share one file on Windows (see `screen_files`).
+//!
+//! `GET` also returns `"versions"` (one per edited file, see `versions`). A save
+//! or delete with an `If-Match: "<version>"` header is refused with 409
+//! (`{"ok":false,"conflict":true,"version":"<current>","error":…}`) when the file
+//! changed since that version, so a studio window holding an old copy cannot
+//! overwrite newer work. Successful saves answer the file's new `"version"`.
 
 mod diag;
 mod files;
 mod names;
 mod screen_files;
+pub mod versions;
 
 pub use diag::{snapshot, DiagnosticJson, Snapshot, LOAD_ERROR_CODE};
 pub use files::write_atomic;
@@ -35,7 +42,7 @@ pub use screen_files::{file_for_delete, file_for_save, Refusal};
 
 use axum::body::Bytes;
 use axum::extract::{DefaultBodyLimit, Path as UrlPath, State};
-use axum::http::StatusCode;
+use axum::http::{HeaderMap, StatusCode};
 use axum::response::{IntoResponse, Response};
 use axum::routing::{get, put};
 use axum::{Json, Router};
@@ -83,11 +90,17 @@ enum ApiError {
     BadRequest(String),
     NotFound(String),
     Conflict(String),
+    /// The file changed since the version the client based its edit on.
+    Stale { message: String, current: String },
     Internal(String),
 }
 
 impl IntoResponse for ApiError {
     fn into_response(self) -> Response {
+        if let ApiError::Stale { message, current } = self {
+            let body = json!({ "ok": false, "conflict": true, "version": current, "error": message });
+            return (StatusCode::CONFLICT, Json(body)).into_response();
+        }
         let (status, msg) = match self {
             ApiError::BadRequest(m) => (StatusCode::BAD_REQUEST, m),
             ApiError::NotFound(m) => (StatusCode::NOT_FOUND, m),
@@ -96,6 +109,7 @@ impl IntoResponse for ApiError {
                 tracing::error!("studio: {m}");
                 (StatusCode::INTERNAL_SERVER_ERROR, m)
             }
+            ApiError::Stale { .. } => unreachable!("answered above"),
         };
         (status, Json(json!({ "ok": false, "error": msg }))).into_response()
     }
@@ -107,16 +121,37 @@ fn parse_body<T: DeserializeOwned>(body: &Bytes, what: &str) -> Result<T, ApiErr
 
 /// Runs a save on the blocking pool under the write lock, then re-validates
 /// the project and bumps the reload counter.
-async fn save<F>(state: AppState, what: &'static str, op: F) -> Result<Json<serde_json::Value>, ApiError>
+async fn save<T, F>(
+    state: AppState,
+    what: &'static str,
+    expected: Option<String>,
+    target: T,
+    op: F,
+) -> Result<Json<serde_json::Value>, ApiError>
 where
-    F: FnOnce(&Path) -> Result<PathBuf, ApiError> + Send + 'static,
+    T: FnOnce(&Path) -> Result<PathBuf, ApiError> + Send + 'static,
+    F: FnOnce(&Path, &Path) -> Result<(), ApiError> + Send + 'static,
 {
     let root = state.root.clone();
     let lock = state.write_lock.clone();
-    let (file, snap) = tokio::task::spawn_blocking(move || {
+    let (file, version, snap) = tokio::task::spawn_blocking(move || {
         let _guard = lock.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
-        let file = op(&root)?;
-        Ok::<_, ApiError>((diag::relative(&root, &file), snapshot(&root)))
+        let path = target(&root)?;
+        // Checked under the write lock, so no other save can slip in between.
+        if let Some(expected) = expected {
+            let current = versions::of_file(&path);
+            if current != expected {
+                return Err(ApiError::Stale {
+                    message: format!(
+                        "{} changed on disk after you opened it (another studio window, a hand edit or a re-import); nothing was saved",
+                        diag::relative(&root, &path)
+                    ),
+                    current,
+                });
+            }
+        }
+        op(&root, &path)?;
+        Ok::<_, ApiError>((diag::relative(&root, &path), versions::of_file(&path), snapshot(&root)))
     })
     .await
     .map_err(|e| ApiError::Internal(format!("save task failed: {e}")))??;
@@ -124,7 +159,12 @@ where
     state.reload.send_modify(|n| *n = n.wrapping_add(1));
     let errors = snap.diagnostics.iter().filter(|d| d.severity == "error").count();
     tracing::info!(file = %file, what, errors, diagnostics = snap.diagnostics.len(), "studio saved");
-    Ok(Json(json!({ "ok": true, "file": file, "diagnostics": snap.diagnostics })))
+    Ok(Json(json!({ "ok": true, "file": file, "version": version, "diagnostics": snap.diagnostics })))
+}
+
+/// The version a save was based on, from `If-Match`; `None` means "do not check".
+fn expected_version(headers: &HeaderMap) -> Option<String> {
+    headers.get(axum::http::header::IF_MATCH).and_then(|v| v.to_str().ok()).and_then(versions::parse_if_match)
 }
 
 // ---------------------------------------------------------------- handlers
@@ -134,8 +174,9 @@ async fn get_project(State(state): State<AppState>) -> Result<Json<serde_json::V
     let snap = tokio::task::spawn_blocking(move || snapshot(&root))
         .await
         .map_err(|e| ApiError::Internal(format!("load task failed: {e}")))?;
+    let versions = versions::of_project(&state.root, snap.loaded.as_ref().map(|(_, map)| map));
     let project = snap.loaded.map(|(p, _)| p);
-    Ok(Json(json!({ "project": project, "diagnostics": snap.diagnostics })))
+    Ok(Json(json!({ "project": project, "versions": versions, "diagnostics": snap.diagnostics })))
 }
 
 impl From<Refusal> for ApiError {
@@ -150,6 +191,7 @@ impl From<Refusal> for ApiError {
 async fn put_screen(
     State(state): State<AppState>,
     UrlPath(name): UrlPath<String>,
+    headers: HeaderMap,
     body: Bytes,
 ) -> Result<Json<serde_json::Value>, ApiError> {
     check_screen_name(&name).map_err(ApiError::BadRequest)?;
@@ -163,10 +205,9 @@ async fn put_screen(
     if !(screen.width.is_finite() && screen.height.is_finite() && screen.width > 0.0 && screen.height > 0.0) {
         return Err(ApiError::BadRequest("screen width and height must be positive numbers".into()));
     }
-    save(state, "screen", move |root| {
-        let path = file_for_save(root, &name)?;
-        files::write_screen(&path, &screen).map_err(ApiError::Internal)?;
-        Ok(path)
+    let target = move |root: &Path| Ok(file_for_save(root, &name)?);
+    save(state, "screen", expected_version(&headers), target, move |_, path| {
+        files::write_screen(path, &screen).map_err(ApiError::Internal)
     })
     .await
 }
@@ -174,47 +215,58 @@ async fn put_screen(
 async fn delete_screen(
     State(state): State<AppState>,
     UrlPath(name): UrlPath<String>,
+    headers: HeaderMap,
 ) -> Result<Json<serde_json::Value>, ApiError> {
     check_screen_name(&name).map_err(ApiError::BadRequest)?;
-    save(state, "screen deleted", move |root| {
-        let path = file_for_delete(root, &name)?;
-        match std::fs::remove_file(&path) {
-            Ok(()) => Ok(path),
-            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
-                Err(ApiError::NotFound(format!("screen {name:?} does not exist")))
-            }
-            Err(e) => Err(ApiError::Internal(format!("cannot remove {}: {e}", path.display()))),
+    let target = {
+        let name = name.clone();
+        move |root: &Path| Ok(file_for_delete(root, &name)?)
+    };
+    save(state, "screen deleted", expected_version(&headers), target, move |_, path| match std::fs::remove_file(path) {
+        Ok(()) => Ok(()),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+            Err(ApiError::NotFound(format!("screen {name:?} does not exist")))
         }
+        Err(e) => Err(ApiError::Internal(format!("cannot remove {}: {e}", path.display()))),
     })
     .await
 }
 
-async fn put_tags(State(state): State<AppState>, body: Bytes) -> Result<Json<serde_json::Value>, ApiError> {
+async fn put_tags(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    body: Bytes,
+) -> Result<Json<serde_json::Value>, ApiError> {
     let tags: Vec<Tag> = parse_body(&body, "tag list")?;
-    save(state, "tags", move |root| {
-        files::write_tags(root, tags).map_err(ApiError::Internal)?;
-        Ok(files::tags_file(root))
+    save(state, "tags", expected_version(&headers), |root| Ok(files::tags_file(root)), move |root, _| {
+        files::write_tags(root, tags).map_err(ApiError::Internal)
     })
     .await
 }
 
-async fn put_alarms(State(state): State<AppState>, body: Bytes) -> Result<Json<serde_json::Value>, ApiError> {
+async fn put_alarms(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    body: Bytes,
+) -> Result<Json<serde_json::Value>, ApiError> {
     let alarms: Vec<Alarm> = parse_body(&body, "alarm list")?;
-    save(state, "alarms", move |root| {
-        files::write_alarms(root, alarms).map_err(ApiError::Internal)?;
-        Ok(files::alarms_file(root))
+    save(state, "alarms", expected_version(&headers), |root| Ok(files::alarms_file(root)), move |root, _| {
+        files::write_alarms(root, alarms).map_err(ApiError::Internal)
     })
     .await
 }
 
-async fn put_meta(State(state): State<AppState>, body: Bytes) -> Result<Json<serde_json::Value>, ApiError> {
+async fn put_meta(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    body: Bytes,
+) -> Result<Json<serde_json::Value>, ApiError> {
     let meta: ProjectMeta = parse_body(&body, "project settings")?;
     if meta.name.trim().is_empty() {
         return Err(ApiError::BadRequest("project name is empty".into()));
     }
-    save(state, "project settings", move |root| {
-        files::write_meta(root, &meta).map_err(ApiError::Internal)?;
-        Ok(files::project_file(root))
+    save(state, "project settings", expected_version(&headers), |root| Ok(files::project_file(root)), move |root, _| {
+        files::write_meta(root, &meta).map_err(ApiError::Internal)
     })
     .await
 }

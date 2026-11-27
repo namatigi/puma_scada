@@ -440,3 +440,88 @@ async fn screen_names_differing_only_in_case_never_touch_each_others_file() {
     assert!(names.contains(&"main".to_string()) && !names.contains(&"Main".to_string()), "{names:?}");
     assert!(fx.read("screens/main.toml").contains("Display1"), "content survived the rename");
 }
+
+// ---------------------------------------------------------------- versions
+
+impl Fixture {
+    async fn call_if_match(&self, method: Method, uri: &str, version: &str, body: Option<String>) -> (StatusCode, Value) {
+        let mut req = Request::builder().method(method).uri(uri).header("if-match", format!("\"{version}\""));
+        if body.is_some() {
+            req = req.header("content-type", "application/json");
+        }
+        let req = req.body(body.map(Body::from).unwrap_or_else(Body::empty)).expect("request");
+        let res = self.app.clone().oneshot(req).await.expect("response");
+        let status = res.status();
+        let bytes = axum::body::to_bytes(res.into_body(), usize::MAX).await.expect("body");
+        (status, serde_json::from_slice(&bytes).unwrap_or(Value::Null))
+    }
+}
+
+/// A studio window opened before another save must not overwrite it: the save
+/// that wiped out a fix in the demo (a stale Manifold) is refused with 409.
+#[tokio::test]
+async fn stale_screen_save_is_refused_and_writes_nothing() {
+    let fx = Fixture::new();
+    let opened = fx.project().await;
+    let old_version = opened["versions"]["screen:Main"].as_str().expect("version of Main").to_string();
+    let mut stale = opened["project"]["screens"][0].clone();
+
+    // Someone else saves Main (another window, or a hand edit).
+    let mut newer = stale.clone();
+    newer["element"][0]["x"] = json!(500.0);
+    let (status, v) = fx.call_if_match(Method::PUT, "/api/studio/screens/Main", &old_version, Some(newer.to_string())).await;
+    assert_eq!(status, StatusCode::OK, "{v}");
+    let new_version = v["version"].as_str().expect("new version").to_string();
+    assert_ne!(new_version, old_version);
+    assert_eq!(fx.project().await["versions"]["screen:Main"], new_version.as_str());
+
+    // The first window saves its old copy, based on the old version: refused.
+    stale["element"][0]["y"] = json!(1.0);
+    let before = fx.read("screens/Main.toml");
+    let reloads = fx.reloads();
+    let (status, v) = fx.call_if_match(Method::PUT, "/api/studio/screens/Main", &old_version, Some(stale.to_string())).await;
+    assert_eq!(status, StatusCode::CONFLICT, "{v}");
+    assert_eq!(v["conflict"], true);
+    assert_eq!(v["version"], new_version.as_str(), "tells the client what is on disk now");
+    assert!(v["error"].as_str().unwrap_or_default().contains("screens/Main.toml"), "{v}");
+    assert_eq!(fx.read("screens/Main.toml"), before, "nothing written");
+    assert_eq!(fx.reloads(), reloads, "no reload for a refused save");
+
+    // Overwriting on purpose: based on the current version, it goes through.
+    let (status, _) = fx.call_if_match(Method::PUT, "/api/studio/screens/Main", &new_version, Some(stale.to_string())).await;
+    assert_eq!(status, StatusCode::OK);
+    assert!(fx.read("screens/Main.toml").contains("y = 1.0"));
+}
+
+#[tokio::test]
+async fn stale_delete_and_list_saves_are_refused_unchecked_saves_still_work() {
+    let fx = Fixture::new();
+    let opened = fx.project().await;
+    let versions = opened["versions"].clone();
+    assert_eq!(versions["alarms"], moviclone_studio::versions::ABSENT);
+
+    // Popup changes on disk; deleting it from the old version is refused.
+    fs::write(fx.root().join("screens/Popup.toml"), "name = \"Popup\"\nwidth = 320.0\nheight = 200.0\n").expect("write");
+    let old_popup = versions["screen:Popup"].as_str().expect("version");
+    let (status, _) = fx.call_if_match(Method::DELETE, "/api/studio/screens/Popup", old_popup, None).await;
+    assert_eq!(status, StatusCode::CONFLICT);
+    assert!(fx.root().join("screens/Popup.toml").exists());
+
+    // tags.toml changes by hand; a tag list based on the old version is refused.
+    let tags = opened["project"]["tags"].clone();
+    fs::write(fx.root().join("tags.toml"), format!("{TAGS}\n[[tag]]\nname = \"Level\"\ntype = \"f32\"\n")).expect("write");
+    let (status, _) = fx.call_if_match(Method::PUT, "/api/studio/tags", versions["tags"].as_str().expect("v"), Some(tags.to_string())).await;
+    assert_eq!(status, StatusCode::CONFLICT);
+    assert!(fx.read("tags.toml").contains("Level"));
+
+    // A new screen expects "absent"; a file that appeared meanwhile is a conflict.
+    let new_screen = json!({ "name": "Extra", "width": 100.0, "height": 100.0 });
+    fs::write(fx.root().join("screens/Extra.toml"), "name = \"Extra\"\nwidth = 5.0\nheight = 5.0\n").expect("write");
+    let (status, _) = fx.call_if_match(Method::PUT, "/api/studio/screens/Extra", "absent", Some(new_screen.to_string())).await;
+    assert_eq!(status, StatusCode::CONFLICT);
+
+    // Without If-Match (scripts, curl) nothing is checked.
+    let (status, v) = fx.call(Method::PUT, "/api/studio/tags", Some(tags.to_string())).await;
+    assert_eq!(status, StatusCode::OK, "{v}");
+    assert!(v["version"].is_string());
+}

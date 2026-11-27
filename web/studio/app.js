@@ -7,7 +7,7 @@ import { loadSymbolMap } from '../shared/symbolmap.js';
 import { toast } from '../shared/toast.js';
 import { formatValue } from '../shared/format.js';
 import { createStore } from './store.js';
-import { createStudioApi } from './studio-api.js';
+import { createStudioApi, StudioApiError } from './studio-api.js';
 import { createCommands } from './commands.js';
 import { createMenuBar, createToolbar, openPalette } from './chrome.js';
 import { createExplorer } from './explorer.js';
@@ -58,7 +58,7 @@ async function boot() {
     return;
   }
   buildUi();
-  store.load(res.project, res.diagnostics ?? []);
+  store.load(res.project, res.diagnostics ?? [], res.versions ?? null);
   store.log(`Opened project "${res.project.meta.name}" (${res.project.screens.length} screens, ${res.project.tags.length} tags)`, 'ok');
   logDiagnostics(res.diagnostics ?? [], 'Validation');
   document.getElementById('boot').remove();
@@ -113,7 +113,7 @@ function buildUi() {
       runtimeStatus?.render();
       refreshStatus();
     },
-    onReload: () => store.log('Runtime reloaded the project'),
+    onReload: () => { store.log('Runtime reloaded the project'); syncWithDisk(); },
     onDiagnostics: (d) => { runtimeDiag = d; runtimeStatus?.render(); },
   });
 
@@ -423,14 +423,40 @@ function updateTitle() {
 
 // ---------------------------------------------------------------- saving
 
+function sendPart(part, value, version) {
+  if (part.startsWith('screen:')) return value ? api.saveScreen(value, version) : api.deleteScreen(part.slice(7), version);
+  if (part === 'tags') return api.saveTags(value, version);
+  if (part === 'alarms') return api.saveAlarms(value, version);
+  if (part === 'meta') return api.saveMeta(value, version);
+  return null;
+}
+
+/**
+ * Saves one part, based on the file version this window loaded. When the file
+ * changed on disk since (another studio window, a hand edit, a re-import) the
+ * server refuses; the engineer then chooses to overwrite it or to keep the file
+ * on disk (and reload), instead of silently losing the other change.
+ */
 async function savePart(part) {
   const value = store.getPart(part);
   let res;
-  if (part.startsWith('screen:')) res = value ? await api.saveScreen(value) : await api.deleteScreen(part.slice(7));
-  else if (part === 'tags') res = await api.saveTags(value);
-  else if (part === 'alarms') res = await api.saveAlarms(value);
-  else if (part === 'meta') res = await api.saveMeta(value);
-  else return null;
+  try {
+    res = await sendPart(part, value, store.version(part));
+  } catch (err) {
+    if (!(err instanceof StudioApiError && err.status === 409 && err.body?.conflict)) throw err;
+    const what = part.startsWith('screen:') ? `Screen ${part.slice(7)}` : part === 'meta' ? 'Project settings' : part === 'tags' ? 'The tag list' : 'The alarm list';
+    store.log(`${what} changed on disk after you opened it`, 'warn');
+    const overwrite = await confirmDialog({
+      title: 'Changed on disk',
+      text: `${what} was changed on disk after you opened it (another studio window, a hand edit or a re-import). ${value === undefined ? 'Delete it anyway' : 'Overwrite it with your version'}, or keep what is on disk? To keep it, use File › Reload Project from Disk (your unsaved edits are discarded).`,
+      okText: value === undefined ? 'Delete anyway' : 'Overwrite with mine',
+      danger: true,
+    });
+    if (!overwrite) throw new Error('not saved: the file changed on disk (File › Reload Project from Disk shows the current version)');
+    res = await sendPart(part, value, err.body.version);
+  }
+  if (res === null) return null;
+  store.setVersion(part, value === undefined ? null : res.version);
   if (value === undefined) store.forgetSaved(part);
   else store.markSaved(part);
   store.setDiagnostics(res.diagnostics ?? []);
@@ -449,10 +475,12 @@ async function saveCaseRename(from, to) {
   const taken = new Set(store.project.screens.map((s) => s.name.toLowerCase()));
   let tmp = `${to.slice(0, 80)}.renaming`;
   for (let n = 2; taken.has(tmp.toLowerCase()); n += 1) tmp = `${to.slice(0, 80)}.renaming${n}`;
-  await api.saveScreen({ ...value, name: tmp });
-  await api.deleteScreen(from);
+  await api.saveScreen({ ...value, name: tmp }, store.version(`screen:${tmp}`));
+  await api.deleteScreen(from, store.version(`screen:${from}`));
+  store.setVersion(`screen:${from}`, null);
   store.forgetSaved(`screen:${from}`);
-  await api.saveScreen(value);
+  const saved = await api.saveScreen(value);
+  store.setVersion(`screen:${to}`, saved.version);
   store.markSaved(`screen:${to}`);
   const res = await api.deleteScreen(tmp);
   store.setDiagnostics(res.diagnostics ?? []);
@@ -538,14 +566,56 @@ async function reloadFromDisk() {
   try {
     const res = await api.project();
     if (!res.project) { store.setDiagnostics(res.diagnostics); toast('The project does not load; see Problems', { kind: 'error' }); return; }
-    const open = docs.all().map((d) => d.id);
-    for (const id of open) docs.close(id);
-    store.load(res.project, res.diagnostics ?? []);
-    for (const id of open) if (id.startsWith('screen:') ? store.getPart(id) : true) openDoc(id);
+    applyFromDisk(res);
     store.log('Reloaded the project from disk', 'ok');
     logDiagnostics(res.diagnostics ?? [], 'Validation');
   } catch (err) {
     toast(`Reload failed: ${err.message}`, { kind: 'error' });
+  }
+}
+
+/** Replaces the working copy with `res` (GET /api/studio/project), keeping the open tabs. */
+function applyFromDisk(res) {
+  const active = activePart();
+  const open = docs.all().map((d) => d.id);
+  for (const id of open) docs.close(id);
+  store.load(res.project, res.diagnostics ?? [], res.versions ?? null);
+  for (const id of open) if (id.startsWith('screen:') ? store.getPart(id) : true) openDoc(id);
+  if (active && open.includes(active) && store.getPart(active) !== undefined) openDoc(active);
+}
+
+let syncing = false;
+/**
+ * Called when the runtime reloads the project. If files changed on disk that
+ * this window did not write (another studio window, a hand edit), a window
+ * without unsaved edits picks them up at once, so it never holds a stale copy;
+ * one with unsaved edits says so, and saving those files asks first.
+ */
+async function syncWithDisk() {
+  if (syncing || saving) return;
+  syncing = true;
+  try {
+    const res = await api.project();
+    if (!res.project) return;
+    const changed = store.changedOnDisk(res.versions);
+    if (!changed.length) return;
+    const { dirty, deleted } = store.pending();
+    const names = changed.map((p) => (p.startsWith('screen:') ? p.slice(7) : p)).join(', ');
+    if (!dirty.length && !deleted.length) {
+      applyFromDisk(res);
+      store.log(`Changed on disk, reloaded: ${names}`, 'ok');
+      toast(`Updated from disk: ${names}`, { kind: 'ok' });
+      return;
+    }
+    const clash = changed.filter((p) => dirty.includes(p) || deleted.includes(p));
+    store.log(`Changed on disk while you have unsaved edits: ${names}`, 'warn');
+    toast(clash.length
+      ? `${clash.map((p) => (p.startsWith('screen:') ? p.slice(7) : p)).join(', ')} changed on disk; saving will ask before overwriting`
+      : `${names} changed on disk; save your edits, then File › Reload Project from Disk`, { kind: 'warn' });
+  } catch (err) {
+    store.log(`Could not check the project on disk: ${err.message}`, 'warn');
+  } finally {
+    syncing = false;
   }
 }
 

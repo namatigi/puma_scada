@@ -261,6 +261,40 @@ async function run() {
     eq([err?.status, err?.message], [400, 'invalid screen']);
   });
 
+  await check('saves send the loaded file version as If-Match; 409 conflicts keep the current version', async () => {
+    const headers = [];
+    const fake = async (url, init) => {
+      headers.push(init.headers['if-match'] ?? null);
+      if (init.headers['if-match'] === '"old"') return { ok: false, status: 409, text: async () => JSON.stringify({ ok: false, conflict: true, version: 'new', error: 'changed on disk' }) };
+      return { ok: true, status: 200, text: async () => JSON.stringify({ ok: true, file: 'tags.toml', version: 'v2', diagnostics: [] }) };
+    };
+    const api = createStudioApi('', { fetchImpl: fake });
+    eq((await api.saveTags([], 'v1')).version, 'v2');
+    await api.saveTags([]);
+    let err = null;
+    try { await api.deleteScreen('Main', 'old'); } catch (e) { err = e; }
+    eq(headers, ['"v1"', null, '"old"']);
+    eq([err?.status, err?.body?.conflict, err?.body?.version], [409, true, 'new']);
+  });
+
+  group = 'store versions';
+  await check('versions per part, absent for new parts, changes detected', () => {
+    const st = createStore();
+    st.load(project(), [], { meta: 'm1', tags: 't1', alarms: 'absent', 'screen:Main': 's1' });
+    eq(st.version('screen:Main'), 's1');
+    eq(st.version('screen:New'), 'absent', 'a screen with no file yet');
+    eq(st.changedOnDisk({ meta: 'm1', tags: 't1', alarms: 'absent', 'screen:Main': 's1' }), []);
+    eq(st.changedOnDisk({ meta: 'm1', tags: 't2', alarms: 'absent', 'screen:Main': 's1', 'screen:Other': 'o1' }).sort(), ['screen:Other', 'tags']);
+    st.setVersion('tags', 't2');
+    eq(st.changedOnDisk({ meta: 'm1', tags: 't2', alarms: 'absent', 'screen:Main': 's1' }), []);
+    st.setVersion('screen:Main', null);
+    eq(st.changedOnDisk({ meta: 'm1', tags: 't2', alarms: 'absent' }), [], 'a deleted screen is absent on both sides');
+    const old = createStore();
+    old.load(project());
+    eq(old.version('tags'), undefined, 'no versions from the server: saves are not checked');
+    eq(old.changedOnDisk({ tags: 'x' }), []);
+  });
+
   const failed = results.filter((r) => !r.ok);
   const summary = document.getElementById('summary');
   summary.textContent = `${failed.length ? 'FAIL' : 'PASS'} ${results.length - failed.length}/${results.length}`;

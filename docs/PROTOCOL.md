@@ -29,14 +29,24 @@ Quality is `"good" | "uncertain" | "bad"`.
 | `POST /api/alarms/{name}/shelve` body `{"minutes":30}` / `…/unshelve` | alarms | `{"ok":true}` |
 | `GET /api/alarms/journal?limit=200` | alarms | `{"events":[AlarmEvent…]}` newest first |
 | `GET /api/diagnostics` | gateway | `{"drivers":[{"name":…,"connected":bool,"requests":n,"errors":n,"last_error":…}], "uptime_s":…}` |
-| `GET /api/studio/project` | studio | `{"project":Project,"diagnostics":[Diagnostic…]}` |
-| `PUT /api/studio/screens/{name}` body Screen | studio | saves `screens/<name>.toml`; `{"ok":bool,"diagnostics":[…]}` |
+| `GET /api/studio/project` | studio | `{"project":Project,"versions":{"meta":"…","tags":"…","alarms":"…","screen:<name>":"…"},"diagnostics":[Diagnostic…]}` |
+| `PUT /api/studio/screens/{name}` body Screen | studio | saves `screens/<name>.toml`; `{"ok":bool,"file":"…","version":"…","diagnostics":[…]}` |
 | `DELETE /api/studio/screens/{name}` | studio | removes the screen |
 | `PUT /api/studio/tags` body `[Tag…]` | studio | saves `tags.toml` |
 | `PUT /api/studio/alarms` body `[Alarm…]` | studio | saves `alarms.toml` |
 | `PUT /api/studio/meta` body ProjectMeta | studio | saves `project.toml` |
 
 `Diagnostic` JSON: `{"severity":"error|warning|note","code":"E011","file":"tags.toml","item":"tag \"X\"","message":"…"}`.
+
+**Studio file versions.** `versions` holds a hash of each edited file (`"absent"`
+when it does not exist). A studio `PUT` or `DELETE` may send the version it was
+based on as `If-Match: "<version>"`; if the file changed since (another studio
+window, a hand edit, a re-import) the request is refused with **409**
+`{"ok":false,"conflict":true,"version":"<current>","error":"…"}` and nothing is
+written. Sending `If-Match` with the current version overwrites on purpose.
+Requests without `If-Match` are not checked. Successful saves return the file's
+new `version`. The studio sends `If-Match` on every save and asks the engineer
+before overwriting.
 
 `AlarmState` JSON:
 ```json

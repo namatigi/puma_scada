@@ -11,14 +11,19 @@ export class StudioApiError extends Error {
 }
 
 export function createStudioApi(base = '', { timeoutMs = 20000, fetchImpl = (...a) => fetch(...a) } = {}) {
-  async function request(method, path, body) {
+  // `version` is sent as If-Match: the server refuses the save with 409
+  // ({conflict:true, version}) when the file changed since that version.
+  async function request(method, path, body, version) {
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), timeoutMs);
     let res;
     try {
       res = await fetchImpl(`${base}${path}`, {
         method,
-        headers: body === undefined ? {} : { 'content-type': 'application/json' },
+        headers: {
+          ...(body === undefined ? {} : { 'content-type': 'application/json' }),
+          ...(version ? { 'if-match': `"${version}"` } : {}),
+        },
         body: body === undefined ? undefined : JSON.stringify(body),
         signal: ctrl.signal,
         cache: 'no-store',
@@ -43,11 +48,11 @@ export function createStudioApi(base = '', { timeoutMs = 20000, fetchImpl = (...
   const enc = encodeURIComponent;
   return {
     project: () => request('GET', '/api/studio/project'),
-    saveScreen: (screen) => request('PUT', `/api/studio/screens/${enc(screen.name)}`, screen),
-    deleteScreen: (name) => request('DELETE', `/api/studio/screens/${enc(name)}`),
-    saveTags: (tags) => request('PUT', '/api/studio/tags', tags),
-    saveAlarms: (alarms) => request('PUT', '/api/studio/alarms', alarms),
-    saveMeta: (meta) => request('PUT', '/api/studio/meta', meta),
+    saveScreen: (screen, version) => request('PUT', `/api/studio/screens/${enc(screen.name)}`, screen, version),
+    deleteScreen: (name, version) => request('DELETE', `/api/studio/screens/${enc(name)}`, undefined, version),
+    saveTags: (tags, version) => request('PUT', '/api/studio/tags', tags, version),
+    saveAlarms: (alarms, version) => request('PUT', '/api/studio/alarms', alarms, version),
+    saveMeta: (meta, version) => request('PUT', '/api/studio/meta', meta, version),
     /** Is a runtime (gateway) answering on this origin? */
     async runtimeAlive() {
       try {
