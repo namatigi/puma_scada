@@ -139,7 +139,8 @@ function drawBallValve({ w, h, p, state, defs }) {
   const nut = { fill: '#F3F3F4', stroke: '#585858' };
   const bodyColour = state === 'fault' ? '#8a6a1a' : p.body;
   const body = { fill: lighten(bodyColour, 0.3), stroke: darken(bodyColour, 0.45) };
-  const handleColour = state === 'closed' ? p.closedHandle : state === 'fault' ? '#ffb000' : p.handle;
+  // Open is green, closed red; unbound valves keep their own colours.
+  const handleColour = state === 'open' || state === 'closed' ? STATE_COLOURS[state] : state === 'fault' ? '#ffb000' : p.handle;
   const hy = h * 0.2;
   const parts = [
     tube(`M0,${ay}H${w}`, pt, { cap: 'butt', ...STEEL }),
@@ -153,7 +154,7 @@ function drawBallValve({ w, h, p, state, defs }) {
   parts.push(s('rect', { x: cx - w * 0.035, y: hy, width: w * 0.07, height: ay - pt * 0.7 - hy + 1, fill: stemFill, stroke: '#4d4d4d', 'stroke-width': 0.6 }));
   parts.push(s('rect', { x: cx - w * 0.07, y: ay - pt * 0.71 - h * 0.07, width: w * 0.14, height: h * 0.07, rx: 1, fill: bodyGradient(defs, '#b9bcc2', true), stroke: '#4d4d4d', 'stroke-width': 0.6 }));
   // Butterfly handle: two swept wings. Closed = turned across the pipe (seen end-on, narrow).
-  const k = state === 'closed' ? 0.38 : 1;
+  const k = 1;
   const wing = (dir) => {
     const x = (f) => cx + dir * f * w * k;
     return `M${cx},${hy - h * 0.035}L${x(0.17)},${hy - h * 0.13}Q${x(0.27)},${hy - h * 0.17} ${x(0.255)},${hy - h * 0.02}`
@@ -348,9 +349,13 @@ function drawUnknown({ w, h, name }) {
 
 // ------------------------------------------------------------------ registry
 
-const valveStateOf = (value, quality) => {
+// A number above `open_above` (default 0) is open, e.g. a valve bound to its
+// line's flow; other values open when truthy.
+const valveStateOf = (value, quality, params = {}) => {
   if (quality === 'bad') return 'fault';
   if (value === null || value === undefined) return 'unknown';
+  const min = Number(params.open_above);
+  if (typeof value === 'number' && Number.isFinite(min)) return Math.abs(value) > min ? 'open' : 'closed';
   return truthy(value) ? 'open' : 'closed';
 };
 
@@ -362,7 +367,7 @@ export const SYMBOLS = {
   'pipe-flange': { title: 'Blind flange', category: 'Pipes', size: [8, 27], params: {}, draw: drawPipeFlange },
   'ball-valve': {
     title: 'Ball valve (butterfly handle)', category: 'Valves', size: [90, 60],
-    params: { axis: 0.72, pipe: 0.44, body: '#2f4f86', handle: '#2e63c9', closedHandle: '#4a4f57' },
+    params: { axis: 0.72, pipe: 0.44, body: '#2f4f86', handle: '#2e63c9' },
     states: ['open', 'closed', 'fault'], stateOf: valveStateOf, draw: drawBallValve,
   },
   'coriolis-meter': {
@@ -385,10 +390,10 @@ export function listSymbols() {
  * State of a symbol for a tag value. Without a bound tag the state is 'static'
  * (drawn as designed, no status colours).
  */
-export function symbolState(name, { bound, value, quality }) {
+export function symbolState(name, { bound, value, quality, params = {} }) {
   if (!bound) return 'static';
   const def = SYMBOLS[name];
-  return (def?.stateOf ?? defaultStateOf)(value, quality);
+  return (def?.stateOf ?? defaultStateOf)(value, quality, params);
 }
 
 /**

@@ -157,6 +157,9 @@ check('symbolState', () => {
   eq(symbolState('ball-valve', { bound: true, value: 1, quality: 'good' }), 'open');
   eq(symbolState('ball-valve', { bound: true, value: 0, quality: 'good' }), 'closed');
   eq(symbolState('ball-valve', { bound: true, value: 1, quality: 'bad' }), 'fault');
+  // Bound to a line's flow: open only above the threshold.
+  eq(symbolState('ball-valve', { bound: true, value: 0, quality: 'good', params: { open_above: '0' } }), 'closed');
+  eq(symbolState('ball-valve', { bound: true, value: 0.2, quality: 'good', params: { open_above: '0' } }), 'open');
   eq(symbolState('pump', { bound: true, value: true }), 'on');
 });
 check('listSymbols has the required set', () => {
@@ -213,7 +216,8 @@ await checkAsync('every symbol in the demo bundle resolves', async () => {
       if (el.kind !== 'symbol') continue;
       const r = resolveSymbol(el.symbol, map, { screen: sc.name, id: el.id });
       ok(r.known, `${sc.name}/${el.id} ${el.symbol} is unmapped`);
-      counts[el.symbol] = (counts[el.symbol] ?? 0) + 1;
+      const base = el.symbol.split('?')[0];
+      counts[base] = (counts[base] ?? 0) + 1;
     }
   }
   eq(counts['movicon:Symbol952'], 17, 'Symbol952 count: ');

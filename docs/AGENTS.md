@@ -57,7 +57,8 @@ Product name: **Moviclone**.
   width (light centre, dark edges), round caps, light grey `#EFEFF0` fill with a
   `#5E5E5E` outline. Fittings where pipes meet.
 - Hand valves: metallic ball-valve bodies with blue butterfly handles, rotated
-  per element `rotation`.
+  per element `rotation`. Bound to a tag, an open valve turns green and a closed
+  one red; `open_above=<n>` opens it only above a number (a line's flow).
 - Flow meters: Coriolis-style body coloured per product (Gasoline red `#FF4D4D`,
   Jet A-1 white, Gasoil grey `#555`, HFO black) with a white
   transmitter head on top.

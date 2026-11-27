@@ -437,7 +437,7 @@ export function createScreenView(container, screen, opts = {}) {
     let body = null;
     let lastKey = '';
     const draw = (sample) => {
-      const state = symbolState(resolved.name, { bound: Boolean(el.tag), value: sample?.v, quality: sample?.q });
+      const state = symbolState(resolved.name, { bound: Boolean(el.tag), value: sample?.v, quality: sample?.q, params: resolved.params });
       const valueKey = typeof sample?.v === 'number' ? sample.v.toFixed(2) : String(sample?.v);
       const key = `${state}|${valueKey}|${sample?.q}`;
       if (key === lastKey) return;

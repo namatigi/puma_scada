@@ -93,10 +93,10 @@ the project has an empty `FM_05` panel for it. The demo removes them:
 The simulator, symbol map and studio Symbol Library know four products:
 Gasoline, JET A-1, Gasoil and HFO.
 
-### 4. Product flow in the Manifold pipes
+### 4. Product flow in the Manifold pipes and valves
 
 Each pipe on Manifold is bound to the mass flow of the meter it belongs to and
-animates in that product's colour while the meter flows above 1 mTon/hr:
+animates in that product's colour while the meter's mass flow is above zero:
 
 | Product | Tag | Colour | Pipes |
 |---|---|---|---|
@@ -105,9 +105,22 @@ animates in that product's colour while the meter flows above 1 mTon/hr:
 | Gasoil | `FM_03_MassFlow` | `#555555` | `Pipeline4`, `Pipeline7`, `Pipeline11`, `Pipeline03` |
 | HFO | `FM_04_MassFlow` | `#151515` | `Pipeline5`, `Pipeline02` |
 
-Product is shown moving from the tank risers at the top through the meter to the
-loading lines at the bottom left (`flow_reverse = true`, the pipes are drawn the
-other way). The upper gasoline header (`Pipeline1`) is fed from both ends and
-keeps its drawing direction; the JET A-1 bypass loop (`Pipeline10`, `Pipeline9`,
-`Pipeline08`) is not animated because valve positions are not known. The
-imported binding of the gasoline lower header to `FM_04_START` was replaced.
+Product moves from bottom to top: from the lines at the bottom left through the
+meter and up the risers (the direction the pipes are drawn; only the horizontal
+upper gasoline header `Pipeline1` has `flow_reverse = true`). With no flow
+(mass flow, and so volume flow, at zero, or bad quality) a pipe shows no dashes. The JET A-1
+bypass loop (`Pipeline10`, `Pipeline9`, `Pipeline08`) is not animated because
+valve positions are not known. The imported binding of the gasoline lower header
+to `FM_04_START` was replaced.
+
+The hand valves on each product's line follow the same flow
+(`symbol = "movicon:Symbol952?open_above=0"` plus the line's tag): green while
+the line flows (open), red when its flow is zero (closed). The two JET A-1
+bypass valves (`ContentControl34`, `ContentControl39`) stay unbound.
+
+| Product | Valves |
+|---|---|
+| Gasoline | `ContentControl28`, `ContentControl31`, `ContentControl40`, `ContentControl41`, `ContentControl42` |
+| JET A-1 | `ContentControl13`, `ContentControl14`, `ContentControl49` |
+| Gasoil | `ContentControl8`, `ContentControl9`, `ContentControl46`, `ContentControl47` |
+| HFO | `ContentControl3`, `ContentControl7`, `ContentControl48` |

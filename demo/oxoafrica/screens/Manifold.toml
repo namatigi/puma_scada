@@ -25,8 +25,6 @@ fill = "#EFEFF0"
 stroke = "#5E5E5E"
 tag = "FM_01_MassFlow"
 flow_color = "#FF4D4D"
-flow_min = 1.0
-flow_reverse = true
 x = 408.591
 y = 466.112
 w = 26.449
@@ -41,8 +39,6 @@ fill = "#EFEFF0"
 stroke = "#5E5E5E"
 tag = "FM_01_MassFlow"
 flow_color = "#FF4D4D"
-flow_min = 1.0
-flow_reverse = true
 x = 605.0
 y = 466.112
 w = 26.449
@@ -57,8 +53,6 @@ fill = "#EFEFF0"
 stroke = "#5E5E5E"
 tag = "FM_01_MassFlow"
 flow_color = "#FF4D4D"
-flow_min = 1.0
-flow_reverse = true
 x = 185.0
 y = -113.0
 w = 26.449
@@ -73,8 +67,6 @@ fill = "#EFEFF0"
 stroke = "#5E5E5E"
 tag = "FM_01_MassFlow"
 flow_color = "#FF4D4D"
-flow_min = 1.0
-flow_reverse = true
 x = 408.73
 y = -107.0
 w = 26.449
@@ -89,8 +81,6 @@ fill = "#EFEFF0"
 stroke = "#5E5E5E"
 tag = "FM_01_MassFlow"
 flow_color = "#FF4D4D"
-flow_min = 1.0
-flow_reverse = true
 x = 660.321
 y = -95.0
 w = 26.449
@@ -105,8 +95,6 @@ fill = "#EFEFF0"
 stroke = "#5E5E5E"
 tag = "FM_03_MassFlow"
 flow_color = "#555555"
-flow_min = 1.0
-flow_reverse = true
 x = 915.0
 y = 6.0
 w = 26.449
@@ -121,8 +109,6 @@ fill = "#EFEFF0"
 stroke = "#5E5E5E"
 tag = "FM_04_MassFlow"
 flow_color = "#151515"
-flow_min = 1.0
-flow_reverse = true
 x = 1678.0
 y = 2.0
 w = 26.449
@@ -137,8 +123,6 @@ fill = "#EFEFF0"
 stroke = "#5E5E5E"
 tag = "FM_03_MassFlow"
 flow_color = "#555555"
-flow_min = 1.0
-flow_reverse = true
 x = 1423.0
 y = 2.0
 w = 26.449
@@ -177,8 +161,6 @@ fill = "#EFEFF0"
 stroke = "#5E5E5E"
 tag = "FM_02_MassFlow"
 flow_color = "#F4F4F4"
-flow_min = 1.0
-flow_reverse = true
 x = 1170.0
 y = -30.0
 w = 26.449
@@ -193,8 +175,6 @@ fill = "#EFEFF0"
 stroke = "#5E5E5E"
 tag = "FM_03_MassFlow"
 flow_color = "#555555"
-flow_min = 1.0
-flow_reverse = true
 x = 830.75
 y = 640.676
 w = 579.474
@@ -209,8 +189,6 @@ fill = "#EFEFF0"
 stroke = "#5E5E5E"
 tag = "FM_02_MassFlow"
 flow_color = "#F4F4F4"
-flow_min = 1.0
-flow_reverse = true
 x = 785.927
 y = 533.0
 w = 365.173
@@ -225,7 +203,7 @@ fill = "#EFEFF0"
 stroke = "#5E5E5E"
 tag = "FM_01_MassFlow"
 flow_color = "#FF4D4D"
-flow_min = 1.0
+flow_reverse = true
 x = 222.0
 y = 447.0
 w = 490.438
@@ -240,8 +218,6 @@ fill = "#EFEFF0"
 stroke = "#5E5E5E"
 tag = "FM_01_MassFlow"
 flow_color = "#FF4D4D"
-flow_min = 1.0
-flow_reverse = true
 x = 246.0
 y = 577.0
 w = 440.573
@@ -304,8 +280,6 @@ fill = "#EFEFF0"
 stroke = "#5E5E5E"
 tag = "FM_01_MassFlow"
 flow_color = "#FF4D4D"
-flow_min = 1.0
-flow_reverse = true
 x = -5.0
 y = 605.0
 w = 231.085
@@ -377,8 +351,6 @@ fill = "#EFEFF0"
 stroke = "#5E5E5E"
 tag = "FM_02_MassFlow"
 flow_color = "#F4F4F4"
-flow_min = 1.0
-flow_reverse = true
 x = 193.0
 y = 566.0
 w = 575.224
@@ -423,8 +395,6 @@ fill = "#EFEFF0"
 stroke = "#5E5E5E"
 tag = "FM_03_MassFlow"
 flow_color = "#555555"
-flow_min = 1.0
-flow_reverse = true
 x = 486.726
 y = 675.857
 w = 325.498
@@ -469,8 +439,6 @@ fill = "#EFEFF0"
 stroke = "#5E5E5E"
 tag = "FM_04_MassFlow"
 flow_color = "#151515"
-flow_min = 1.0
-flow_reverse = true
 x = 858.0
 y = 810.0
 w = 806.224
@@ -772,7 +740,8 @@ screen = "FM04_Trend"
 [[element]]
 id = "ContentControl3"
 kind = "symbol"
-symbol = "movicon:Symbol952"
+symbol = "movicon:Symbol952?open_above=0"
+tag = "FM_04_MassFlow"
 x = 1240.0
 y = 765.0
 w = 90.0
@@ -781,7 +750,8 @@ h = 60.0
 [[element]]
 id = "ContentControl7"
 kind = "symbol"
-symbol = "movicon:Symbol952"
+symbol = "movicon:Symbol952?open_above=0"
+tag = "FM_04_MassFlow"
 x = 1540.0
 y = 765.0
 w = 90.0
@@ -790,7 +760,8 @@ h = 60.0
 [[element]]
 id = "ContentControl8"
 kind = "symbol"
-symbol = "movicon:Symbol952"
+symbol = "movicon:Symbol952?open_above=0"
+tag = "FM_03_MassFlow"
 x = 712.438
 y = 790.224
 w = 90.0
@@ -800,7 +771,8 @@ rotation = 315.0
 [[element]]
 id = "ContentControl9"
 kind = "symbol"
-symbol = "movicon:Symbol952"
+symbol = "movicon:Symbol952?open_above=0"
+tag = "FM_03_MassFlow"
 x = 562.0
 y = 938.0
 w = 90.0
@@ -810,7 +782,8 @@ rotation = 315.0
 [[element]]
 id = "ContentControl13"
 kind = "symbol"
-symbol = "movicon:Symbol952"
+symbol = "movicon:Symbol952?open_above=0"
+tag = "FM_02_MassFlow"
 x = 445.0
 y = 751.888
 w = 90.0
@@ -820,7 +793,8 @@ rotation = 315.0
 [[element]]
 id = "ContentControl14"
 kind = "symbol"
-symbol = "movicon:Symbol952"
+symbol = "movicon:Symbol952?open_above=0"
+tag = "FM_02_MassFlow"
 x = 272.0
 y = 918.888
 w = 90.0
@@ -830,7 +804,8 @@ rotation = 315.0
 [[element]]
 id = "ContentControl28"
 kind = "symbol"
-symbol = "movicon:Symbol952"
+symbol = "movicon:Symbol952?open_above=0"
+tag = "FM_01_MassFlow"
 x = 10.0
 y = 876.888
 w = 90.0
@@ -840,7 +815,8 @@ rotation = 315.0
 [[element]]
 id = "ContentControl31"
 kind = "symbol"
-symbol = "movicon:Symbol952"
+symbol = "movicon:Symbol952?open_above=0"
+tag = "FM_01_MassFlow"
 x = 182.0
 y = 665.0
 w = 90.0
@@ -868,7 +844,8 @@ h = 60.0
 [[element]]
 id = "ContentControl40"
 kind = "symbol"
-symbol = "movicon:Symbol952"
+symbol = "movicon:Symbol952?open_above=0"
+tag = "FM_01_MassFlow"
 x = 155.931
 y = 219.0
 w = 90.0
@@ -878,7 +855,8 @@ rotation = 90.0
 [[element]]
 id = "ContentControl41"
 kind = "symbol"
-symbol = "movicon:Symbol952"
+symbol = "movicon:Symbol952?open_above=0"
+tag = "FM_01_MassFlow"
 x = 380.0
 y = 219.0
 w = 90.0
@@ -888,7 +866,8 @@ rotation = 90.0
 [[element]]
 id = "ContentControl42"
 kind = "symbol"
-symbol = "movicon:Symbol952"
+symbol = "movicon:Symbol952?open_above=0"
+tag = "FM_01_MassFlow"
 x = 631.094
 y = 219.0
 w = 90.0
@@ -898,7 +877,8 @@ rotation = 90.0
 [[element]]
 id = "ContentControl46"
 kind = "symbol"
-symbol = "movicon:Symbol952"
+symbol = "movicon:Symbol952?open_above=0"
+tag = "FM_03_MassFlow"
 x = 885.0
 y = 219.0
 w = 90.0
@@ -908,7 +888,8 @@ rotation = 90.0
 [[element]]
 id = "ContentControl47"
 kind = "symbol"
-symbol = "movicon:Symbol952"
+symbol = "movicon:Symbol952?open_above=0"
+tag = "FM_03_MassFlow"
 x = 1396.0
 y = 219.0
 w = 90.0
@@ -918,7 +899,8 @@ rotation = 90.0
 [[element]]
 id = "ContentControl48"
 kind = "symbol"
-symbol = "movicon:Symbol952"
+symbol = "movicon:Symbol952?open_above=0"
+tag = "FM_04_MassFlow"
 x = 1651.0
 y = 219.0
 w = 90.0
@@ -967,7 +949,8 @@ rotation = 315.0
 [[element]]
 id = "ContentControl49"
 kind = "symbol"
-symbol = "movicon:Symbol952"
+symbol = "movicon:Symbol952?open_above=0"
+tag = "FM_02_MassFlow"
 x = 1143.0
 y = 219.0
 w = 90.0
