@@ -3873,15 +3873,6 @@
           "w": 90.0,
           "h": 60.0,
           "rotation": 90.0
-        },
-        {
-          "id": "Pipeline15",
-          "kind": "symbol",
-          "symbol": "movicon:Symbol732",
-          "x": 951.0,
-          "y": 709.0,
-          "w": 146.0,
-          "h": 33.0
         }
       ]
     }

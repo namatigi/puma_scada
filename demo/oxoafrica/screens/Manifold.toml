@@ -198,18 +198,6 @@ w = 440.573
 h = 25.0
 
 [[element]]
-id = "BaseOilRun"
-kind = "pipeline"
-points = [[0.0, 1145.0], [130.0, 1015.0], [634.0, 1015.0], [634.0, 732.0], [773.0, 732.0], [773.0, 0.0]]
-thickness = 26.449
-fill = "#EFEFF0"
-stroke = "#5E5E5E"
-x = 1065.0
-y = 0.0
-w = 786.225
-h = 1158.225
-
-[[element]]
 id = "ContentControl11"
 kind = "symbol"
 symbol = "movicon:PipesPipe15"
@@ -919,87 +907,3 @@ y = 219.0
 w = 90.0
 h = 60.0
 rotation = 90.0
-
-[[element]]
-id = "ContentControl"
-kind = "symbol"
-symbol = "movicon:Symbol952"
-x = 1251.0
-y = 970.0
-w = 90.0
-h = 60.0
-
-[[element]]
-id = "ContentControl2"
-kind = "symbol"
-symbol = "movicon:Symbol952"
-x = 1535.0
-y = 970.0
-w = 90.0
-h = 60.0
-
-[[element]]
-id = "ContentControl51"
-kind = "symbol"
-symbol = "movicon:Symbol408"
-x = 1396.0
-y = 914.0
-w = 104.0
-h = 125.0
-
-[[element]]
-id = "EditDisplay"
-kind = "display"
-tag = "FM_05_MassFlow"
-unit = "mTon/hr"
-format = "#0.0"
-x = 1491.0
-y = 909.0
-w = 140.0
-h = 50.0
-
-[[element]]
-id = "ButtonControl4"
-kind = "button"
-text = "Base Oil"
-x = 1312.0
-y = 919.0
-w = 93.0
-h = 36.0
-
-[[element.on_click]]
-action = "open-screen"
-screen = "FM_05"
-
-[[element]]
-id = "BaseOilRiserFitting"
-kind = "symbol"
-symbol = "movicon:PipesPipe15"
-x = 1813.0
-y = 45.0
-w = 50.0
-h = 29.0
-rotation = 90.0
-
-[[element]]
-id = "BaseOilRiserValve"
-kind = "symbol"
-symbol = "movicon:Symbol952"
-x = 1793.0
-y = 202.0
-w = 90.0
-h = 60.0
-rotation = 90.0
-
-[[element]]
-id = "BaseOilTrendButton"
-kind = "button"
-text = "BaseOil Trend & Log"
-x = 1720.0
-y = 774.0
-w = 185.0
-h = 45.857
-
-[[element.on_click]]
-action = "open-screen"
-screen = "FM05_Trend"
