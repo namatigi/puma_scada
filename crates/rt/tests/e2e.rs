@@ -242,7 +242,7 @@ async fn serves_the_bundle_live_values_and_writes_coils() {
 
     let values = wait_good(&mut ws, &["FM_01_MassFlow", "FM_01_Density", "FM_01_START"]).await;
     let density = values["FM_01_Density"]["v"].as_f64().unwrap();
-    assert!((700.0..740.0).contains(&density), "gasoline density {density}");
+    assert!((950.0..1010.0).contains(&density), "HFO density {density}");
 
     // Coil round trip: write over the WebSocket, then see the device's value come back.
     let before = values["FM_01_START"]["v"].as_bool().unwrap();

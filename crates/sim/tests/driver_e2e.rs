@@ -115,9 +115,9 @@ async fn values_arrive_with_good_quality_and_exact_scaling() {
     assert_eq!(rig.get("Aux_Count").value, Value::Int(-70_000));
     assert_eq!(rig.get("Aux_Name").value, Value::Text("PETRO".into()));
 
-    // Simulated values: gasoline density on unit 1, decoded from a big-endian f32.
+    // Simulated values: HFO density on unit 1, decoded from a big-endian f32.
     let density = rig.get("FM_01_Density").value.as_f64().unwrap();
-    assert!((690.0..750.0).contains(&density), "density {density}");
+    assert!((950.0..1010.0).contains(&density), "density {density}");
     let sim_density = sim.read_tag("FM_01_Density").unwrap().as_f64().unwrap();
     assert!((density - sim_density).abs() < 2.0, "driver {density} vs sim {sim_density}");
     assert_eq!(rig.get("FM_01_START").value, Value::Bool(true));
@@ -230,10 +230,11 @@ async fn petrogas_sample_project_is_fully_simulated() {
     }
     eventually("every Petrogas tag good", || store.ids().all(|id| store.get(id).quality == Quality::Good)).await;
     let rho = |n: &str| store.get_by_name(n).unwrap().value.as_f64().unwrap();
-    assert!((rho("FM_01_Density") - 720.0).abs() < 30.0);
-    assert!((rho("FM_02_Density") - 800.0).abs() < 30.0);
-    assert!((rho("FM_03_Density") - 840.0).abs() < 30.0);
-    assert!((rho("FM_04_Density") - 980.0).abs() < 30.0);
+    // FM_01 HFO, FM_02 gasoil, FM_03 JET A-1, FM_04 gasoline (as the screens name them).
+    assert!((rho("FM_01_Density") - 980.0).abs() < 30.0);
+    assert!((rho("FM_02_Density") - 840.0).abs() < 30.0);
+    assert!((rho("FM_03_Density") - 800.0).abs() < 30.0);
+    assert!((rho("FM_04_Density") - 720.0).abs() < 30.0);
     let flow = rho("FM_01_MassFlow");
     let vr = rho("FM_01_Volume_Rate");
     assert!((0.0..=150.0).contains(&flow));

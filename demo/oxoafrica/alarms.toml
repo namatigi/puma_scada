@@ -6,11 +6,11 @@
 name = "FM01_HighFlow"
 tag = "FM_01_MassFlow"
 when = "above"
-limit = 113.0
+limit = 69.0
 deadband = 2.0
 delay_s = 3.0
 severity = "high"
-message = "Gasoline (FM_01) mass flow above 113 mTon/hr"
+message = "HFO (FM_01) mass flow above 69 mTon/hr"
 area = "Manifold"
 
 [[alarm]]
@@ -21,29 +21,29 @@ limit = 10.0
 deadband = 5.0
 delay_s = 10.0
 severity = "medium"
-message = "Gasoline (FM_01) mass flow below 10 mTon/hr (loading stopped)"
+message = "HFO (FM_01) mass flow below 10 mTon/hr (loading stopped)"
 area = "Manifold"
 
 [[alarm]]
 name = "FM01_DensityHigh"
 tag = "FM_01_Density"
 when = "above"
-limit = 721.2
+limit = 981.2
 deadband = 0.3
 delay_s = 5.0
 severity = "medium"
-message = "Gasoline (FM_01) density above 721.2 kg/m³ (off-spec)"
+message = "HFO (FM_01) density above 981.2 kg/m³ (off-spec)"
 area = "Manifold"
 
 [[alarm]]
 name = "FM01_DensityLow"
 tag = "FM_01_Density"
 when = "below"
-limit = 718.8
+limit = 978.8
 deadband = 0.3
 delay_s = 5.0
 severity = "medium"
-message = "Gasoline (FM_01) density below 718.8 kg/m³ (off-spec)"
+message = "HFO (FM_01) density below 978.8 kg/m³ (off-spec)"
 area = "Manifold"
 
 [[alarm]]
@@ -52,29 +52,29 @@ tag = "FM_01_MassFlow"
 when = "bad-quality"
 delay_s = 2.0
 severity = "critical"
-message = "Gasoline (FM_01) flow meter not answering (bad quality)"
+message = "HFO (FM_01) flow meter not answering (bad quality)"
 area = "Manifold"
 
 [[alarm]]
 name = "FM01_PressureHigh"
 tag = "FM_01_External_Pressure"
 when = "above"
-limit = 6.15
+limit = 4.7
 deadband = 0.2
 delay_s = 3.0
 severity = "high"
-message = "Gasoline (FM_01) external pressure above 6.15 bar"
+message = "HFO (FM_01) external pressure above 4.7 bar"
 area = "Manifold"
 
 [[alarm]]
 name = "FM02_HighFlow"
 tag = "FM_02_MassFlow"
 when = "above"
-limit = 100.0
+limit = 105.5
 deadband = 2.0
 delay_s = 3.0
 severity = "high"
-message = "JET A-1 (FM_02) mass flow above 100 mTon/hr"
+message = "Gasoil (FM_02) mass flow above 105.5 mTon/hr"
 area = "Manifold"
 
 [[alarm]]
@@ -85,29 +85,29 @@ limit = 10.0
 deadband = 5.0
 delay_s = 10.0
 severity = "medium"
-message = "JET A-1 (FM_02) mass flow below 10 mTon/hr (loading stopped)"
+message = "Gasoil (FM_02) mass flow below 10 mTon/hr (loading stopped)"
 area = "Manifold"
 
 [[alarm]]
 name = "FM02_DensityHigh"
 tag = "FM_02_Density"
 when = "above"
-limit = 801.2
+limit = 841.2
 deadband = 0.3
 delay_s = 5.0
 severity = "medium"
-message = "JET A-1 (FM_02) density above 801.2 kg/m³ (off-spec)"
+message = "Gasoil (FM_02) density above 841.2 kg/m³ (off-spec)"
 area = "Manifold"
 
 [[alarm]]
 name = "FM02_DensityLow"
 tag = "FM_02_Density"
 when = "below"
-limit = 798.8
+limit = 838.8
 deadband = 0.3
 delay_s = 5.0
 severity = "medium"
-message = "JET A-1 (FM_02) density below 798.8 kg/m³ (off-spec)"
+message = "Gasoil (FM_02) density below 838.8 kg/m³ (off-spec)"
 area = "Manifold"
 
 [[alarm]]
@@ -116,29 +116,29 @@ tag = "FM_02_MassFlow"
 when = "bad-quality"
 delay_s = 2.0
 severity = "critical"
-message = "JET A-1 (FM_02) flow meter not answering (bad quality)"
+message = "Gasoil (FM_02) flow meter not answering (bad quality)"
 area = "Manifold"
 
 [[alarm]]
 name = "FM02_PressureHigh"
 tag = "FM_02_External_Pressure"
 when = "above"
-limit = 5.7
+limit = 5.9
 deadband = 0.2
 delay_s = 3.0
 severity = "high"
-message = "JET A-1 (FM_02) external pressure above 5.7 bar"
+message = "Gasoil (FM_02) external pressure above 5.9 bar"
 area = "Manifold"
 
 [[alarm]]
 name = "FM03_HighFlow"
 tag = "FM_03_MassFlow"
 when = "above"
-limit = 105.5
+limit = 100.0
 deadband = 2.0
 delay_s = 3.0
 severity = "high"
-message = "Gasoil (FM_03) mass flow above 105.5 mTon/hr"
+message = "JET A-1 (FM_03) mass flow above 100 mTon/hr"
 area = "Manifold"
 
 [[alarm]]
@@ -149,29 +149,29 @@ limit = 10.0
 deadband = 5.0
 delay_s = 10.0
 severity = "medium"
-message = "Gasoil (FM_03) mass flow below 10 mTon/hr (loading stopped)"
+message = "JET A-1 (FM_03) mass flow below 10 mTon/hr (loading stopped)"
 area = "Manifold"
 
 [[alarm]]
 name = "FM03_DensityHigh"
 tag = "FM_03_Density"
 when = "above"
-limit = 841.2
+limit = 801.2
 deadband = 0.3
 delay_s = 5.0
 severity = "medium"
-message = "Gasoil (FM_03) density above 841.2 kg/m³ (off-spec)"
+message = "JET A-1 (FM_03) density above 801.2 kg/m³ (off-spec)"
 area = "Manifold"
 
 [[alarm]]
 name = "FM03_DensityLow"
 tag = "FM_03_Density"
 when = "below"
-limit = 838.8
+limit = 798.8
 deadband = 0.3
 delay_s = 5.0
 severity = "medium"
-message = "Gasoil (FM_03) density below 838.8 kg/m³ (off-spec)"
+message = "JET A-1 (FM_03) density below 798.8 kg/m³ (off-spec)"
 area = "Manifold"
 
 [[alarm]]
@@ -180,29 +180,29 @@ tag = "FM_03_MassFlow"
 when = "bad-quality"
 delay_s = 2.0
 severity = "critical"
-message = "Gasoil (FM_03) flow meter not answering (bad quality)"
+message = "JET A-1 (FM_03) flow meter not answering (bad quality)"
 area = "Manifold"
 
 [[alarm]]
 name = "FM03_PressureHigh"
 tag = "FM_03_External_Pressure"
 when = "above"
-limit = 5.9
+limit = 5.7
 deadband = 0.2
 delay_s = 3.0
 severity = "high"
-message = "Gasoil (FM_03) external pressure above 5.9 bar"
+message = "JET A-1 (FM_03) external pressure above 5.7 bar"
 area = "Manifold"
 
 [[alarm]]
 name = "FM04_HighFlow"
 tag = "FM_04_MassFlow"
 when = "above"
-limit = 69.0
+limit = 113.0
 deadband = 2.0
 delay_s = 3.0
 severity = "high"
-message = "HFO (FM_04) mass flow above 69 mTon/hr"
+message = "Gasoline (FM_04) mass flow above 113 mTon/hr"
 area = "Manifold"
 
 [[alarm]]
@@ -213,29 +213,29 @@ limit = 10.0
 deadband = 5.0
 delay_s = 10.0
 severity = "medium"
-message = "HFO (FM_04) mass flow below 10 mTon/hr (loading stopped)"
+message = "Gasoline (FM_04) mass flow below 10 mTon/hr (loading stopped)"
 area = "Manifold"
 
 [[alarm]]
 name = "FM04_DensityHigh"
 tag = "FM_04_Density"
 when = "above"
-limit = 981.2
+limit = 721.2
 deadband = 0.3
 delay_s = 5.0
 severity = "medium"
-message = "HFO (FM_04) density above 981.2 kg/m³ (off-spec)"
+message = "Gasoline (FM_04) density above 721.2 kg/m³ (off-spec)"
 area = "Manifold"
 
 [[alarm]]
 name = "FM04_DensityLow"
 tag = "FM_04_Density"
 when = "below"
-limit = 978.8
+limit = 718.8
 deadband = 0.3
 delay_s = 5.0
 severity = "medium"
-message = "HFO (FM_04) density below 978.8 kg/m³ (off-spec)"
+message = "Gasoline (FM_04) density below 718.8 kg/m³ (off-spec)"
 area = "Manifold"
 
 [[alarm]]
@@ -244,16 +244,16 @@ tag = "FM_04_MassFlow"
 when = "bad-quality"
 delay_s = 2.0
 severity = "critical"
-message = "HFO (FM_04) flow meter not answering (bad quality)"
+message = "Gasoline (FM_04) flow meter not answering (bad quality)"
 area = "Manifold"
 
 [[alarm]]
 name = "FM04_PressureHigh"
 tag = "FM_04_External_Pressure"
 when = "above"
-limit = 4.7
+limit = 6.15
 deadband = 0.2
 delay_s = 3.0
 severity = "high"
-message = "HFO (FM_04) external pressure above 4.7 bar"
+message = "Gasoline (FM_04) external pressure above 6.15 bar"
 area = "Manifold"

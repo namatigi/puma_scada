@@ -3,8 +3,8 @@
 //! Serves every station of a project's modbus-tcp drivers on one socket and
 //! answers for each unit id, with plausible values for a petroleum loading
 //! manifold (see [`process`]): mass flow 0–150 mTon/hr with slow waves, noise and
-//! occasional stops; density by product (FM_01..FM_04 → gasoline, jet, gasoil,
-//! HFO); temperature 20–45 °C; volume rate = mass flow × 1000 / density (m³/hr);
+//! occasional stops; density by product (FM_01..FM_04 → HFO, gasoil, JET A-1,
+//! gasoline); temperature 20–45 °C; volume rate = mass flow × 1000 / density (m³/hr);
 //! totals and inventories integrating the flow; external pressure 2–8 bar.
 //! START coils gate the totalizers; writing `true` to a Reset_Total coil zeroes
 //! that meter's totals. Anything a client writes persists (the simulation stops

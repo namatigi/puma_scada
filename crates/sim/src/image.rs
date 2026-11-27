@@ -99,7 +99,7 @@ impl SimState {
         }
 
         // One meter per unit id; the product comes from the meter number in the
-        // tag names (FM_01 → gasoline …), a product word, or the station order.
+        // tag names (FM_01 → HFO …), a product word, or the station order.
         let mut meter_of_unit: BTreeMap<u8, usize> = BTreeMap::new();
         let mut products: Vec<Option<Product>> = Vec::new();
         let mut bindings = Vec::new();
@@ -404,8 +404,9 @@ mod tests {
     #[test]
     fn densities_follow_the_product_of_each_meter() {
         let s = SimState::new(&project());
-        assert!((f(s.read_tag("FM_01_Density")) - 720.0).abs() < 15.0);
-        assert!((f(s.read_tag("FM_04_Density")) - 980.0).abs() < 25.0);
+        // FM_01 is HFO and FM_04 gasoline, as the OXOAFRICA screens name them.
+        assert!((f(s.read_tag("FM_01_Density")) - 980.0).abs() < 25.0);
+        assert!((f(s.read_tag("FM_04_Density")) - 720.0).abs() < 15.0);
         assert_eq!(s.unit_ids(), vec![1, 4]);
     }
 

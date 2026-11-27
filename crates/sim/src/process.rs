@@ -39,9 +39,10 @@ pub enum Product {
 }
 
 impl Product {
-    const BY_METER: [Product; 4] = [Product::Gasoline, Product::Jet, Product::Gasoil, Product::Hfo];
+    // The OXOAFRICA meters, as the screens name them (FM_01 panel "HFO" …).
+    const BY_METER: [Product; 4] = [Product::Hfo, Product::Gasoil, Product::Jet, Product::Gasoline];
 
-    /// Product of meter number `n` (FM_01 → gasoline … FM_04 → HFO).
+    /// Product of meter number `n` (FM_01 → HFO, FM_02 → gasoil, FM_03 → JET A-1, FM_04 → gasoline).
     pub fn for_meter(n: u32) -> Product {
         Self::BY_METER[(n.max(1) as usize - 1) % Self::BY_METER.len()]
     }
@@ -297,10 +298,10 @@ mod tests {
 
     #[test]
     fn products_by_meter_number() {
-        assert_eq!(Product::for_meter(1), Product::Gasoline);
-        assert_eq!(Product::for_meter(2), Product::Jet);
-        assert_eq!(Product::for_meter(3), Product::Gasoil);
-        assert_eq!(Product::for_meter(4), Product::Hfo);
+        assert_eq!(Product::for_meter(1), Product::Hfo);
+        assert_eq!(Product::for_meter(2), Product::Gasoil);
+        assert_eq!(Product::for_meter(3), Product::Jet);
+        assert_eq!(Product::for_meter(4), Product::Gasoline);
         assert_eq!(Product::from_name("HFO_Meter"), Some(Product::Hfo));
     }
 

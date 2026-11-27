@@ -43,20 +43,21 @@ as in the original project).
 ### 2. `alarms.toml`: 24 alarms on the four loading meters
 
 The Movicon project defines no alarms. The demo adds six per meter
-(FM_01 Gasoline, FM_02 JET A-1, FM_03 Gasoil, FM_04 HFO), all in area
+(FM_01 HFO, FM_02 Gasoil, FM_03 JET A-1, FM_04 Gasoline, as the project's meter
+buttons and panels name them), all in area
 `Manifold`:
 
 | Alarm | Condition | Severity | Delay | Deadband |
 |---|---|---|---|---|
-| `FM0n_HighFlow` | mass flow above 113 / 100 / 105.5 / 69 mTon/hr | high | 3 s | 2 |
+| `FM0n_HighFlow` | mass flow above 69 / 105.5 / 100 / 113 mTon/hr | high | 3 s | 2 |
 | `FM0n_LowFlow` | mass flow below 10 mTon/hr (loading stopped) | medium | 10 s | 5 |
 | `FM0n_DensityHigh` | density above ρ15 + 1.2 kg/m³ (off-spec) | medium | 5 s | 0.3 |
 | `FM0n_DensityLow` | density below ρ15 − 1.2 kg/m³ (off-spec) | medium | 5 s | 0.3 |
 | `FM0n_CommLoss` | mass flow tag has bad quality (meter not answering) | critical | 2 s | – |
-| `FM0n_PressureHigh` | external pressure above 6.15 / 5.7 / 5.9 / 4.7 bar | high | 3 s | 0.2 |
+| `FM0n_PressureHigh` | external pressure above 4.7 / 5.9 / 5.7 / 6.15 bar | high | 3 s | 0.2 |
 
-ρ15 is the product density at 15 °C used by the simulator: 720, 800, 840 and
-980 kg/m³.
+ρ15 is the product density at 15 °C used by the simulator: 980, 840, 800 and
+720 kg/m³ (FM_01 to FM_04).
 
 The limits are tuned to the simulator (`crates/sim/src/process.rs`) so the demo
 raises and clears alarms by itself:
@@ -93,17 +94,17 @@ the project has an empty `FM_05` panel for it. The demo removes them:
 The simulator, symbol map and studio Symbol Library know four products:
 Gasoline, JET A-1, Gasoil and HFO.
 
-### 4. Product flow in the Manifold pipes, valves and displays
+### 4. Product flow in the Manifold pipes and valves
 
 Each pipe on Manifold is bound to the mass flow of the meter it belongs to and
 animates in that product's colour while the meter's mass flow is above zero:
 
 | Product | Tag | Colour | Pipes |
 |---|---|---|---|
-| Gasoline | `FM_01_MassFlow` | `#FF4D4D` | `Pipeline3`, `Pipeline`, `Pipeline07`, `Pipeline06`, `Pipeline1`, `Pipeline05`, `Pipeline04`, `Pipeline12` |
-| JET A-1 | `FM_02_MassFlow` | `#F4F4F4` | `Pipeline2`, `Pipeline6`, `Pipeline8` |
-| Gasoil | `FM_03_MassFlow` | `#555555` | `Pipeline4`, `Pipeline7`, `Pipeline11`, `Pipeline03` |
-| HFO | `FM_04_MassFlow` | `#151515` | `Pipeline5`, `Pipeline02` |
+| Gasoline | `FM_04_MassFlow` | `#FF4D4D` | `Pipeline3`, `Pipeline`, `Pipeline07`, `Pipeline06`, `Pipeline1`, `Pipeline05`, `Pipeline04`, `Pipeline12` |
+| JET A-1 | `FM_03_MassFlow` | `#F4F4F4` | `Pipeline2`, `Pipeline6`, `Pipeline8` |
+| Gasoil | `FM_02_MassFlow` | `#555555` | `Pipeline4`, `Pipeline7`, `Pipeline11`, `Pipeline03` |
+| HFO | `FM_01_MassFlow` | `#151515` | `Pipeline5`, `Pipeline02` |
 
 Product moves from bottom to top: from the lines at the bottom left through the
 meter and up the risers (the direction the pipes are drawn; only the horizontal
@@ -111,13 +112,7 @@ upper gasoline header `Pipeline1` has `flow_reverse = true`). With no flow
 (mass flow, and so volume flow, at zero, or bad quality) a pipe shows no dashes. The JET A-1
 bypass loop (`Pipeline10`, `Pipeline9`, `Pipeline08`) is not animated because
 valve positions are not known. The imported binding of the gasoline lower header
-to `FM_04_START` was replaced.
-
-The four flow displays beside the meters were bound to the wrong meters in the
-original project (the display by Gasoline showed HFO, by JET A-1 Gasoil, by Gasoil
-JET A-1, and by HFO Gasoline's volume rate under a mTon/hr unit). Each now shows
-its own meter's mass flow: `EditDisplay5` `FM_01_MassFlow`, `EditDisplay2`
-`FM_02_MassFlow`, `EditDisplay3` `FM_03_MassFlow`, `EditDisplay4` `FM_04_MassFlow`.
+to `FM_04_START` (the gasoline meter's run flag) was replaced by its mass flow.
 
 The hand valves on each product's line follow the same flow
 (`symbol = "movicon:Symbol952?open_above=0"` plus the line's tag): green while
