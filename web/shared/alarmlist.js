@@ -6,6 +6,7 @@
 //   list.setAlarms(alarms); list.destroy();
 
 import { h } from './svg.js';
+import { canOperate, mayOperate, onAccessChange } from './access.js';
 import { formatAge, formatDateTime, formatValue } from './format.js';
 import { toast } from './toast.js';
 
@@ -111,6 +112,7 @@ export function createAlarmList(host, opts) {
 
   async function act(fn, okMsg) {
     if (!api) return;
+    if (!mayOperate('acknowledge or shelve alarms')) return;
     try {
       await fn();
       if (okMsg) toast(okMsg, { kind: 'ok', timeout: 2000 });
@@ -150,6 +152,8 @@ export function createAlarmList(host, opts) {
     setTimeout(() => document.addEventListener('pointerdown', close, true), 0);
   }
 
+  onAccessChange(() => { if (host.isConnected) render(); });
+
   function render() {
     const scoped = alarms.filter((a) => !area || a.area === area);
     const counts = Object.fromEntries(SEVERITIES.map((sv) => [sv, scoped.filter((a) => a.severity === sv && isActive(a)).length]));
@@ -158,15 +162,18 @@ export function createAlarmList(host, opts) {
     const plan = ackPlan(alarms, view());
     ackAll.textContent = plan.label;
     ackAll.title = plan.all ? 'Acknowledge every unacknowledged alarm' : 'Acknowledge the unacknowledged alarms in this list';
-    ackAll.disabled = !plan.names.length;
+    const operate = canOperate();
+    ackAll.disabled = !plan.names.length || !operate;
+    if (!operate) ackAll.title = 'Sign in as an operator to acknowledge alarms';
     const now = Date.now();
     list.replaceChildren(...shown.map((a) => {
       const actions = [];
-      if (isUnacked(a)) actions.push(h('button', { type: 'button', class: 'mc-btn mc-btn-ack', text: 'Ack', onclick: () => act(() => api.ack(a.name)) }));
-      if (a.state === 'shelved') actions.push(h('button', { type: 'button', class: 'mc-btn', text: 'Unshelve', onclick: () => act(() => api.unshelve(a.name), `${a.name} unshelved`) }));
+      const locked = operate ? {} : { disabled: true, title: 'Sign in as an operator to act on alarms' };
+      if (isUnacked(a)) actions.push(h('button', { type: 'button', class: 'mc-btn mc-btn-ack', text: 'Ack', ...locked, onclick: () => act(() => api.ack(a.name)) }));
+      if (a.state === 'shelved') actions.push(h('button', { type: 'button', class: 'mc-btn', text: 'Unshelve', ...locked, onclick: () => act(() => api.unshelve(a.name), `${a.name} unshelved`) }));
       else if (a.state !== 'disabled') {
-        const btn = h('button', { type: 'button', class: 'mc-btn', text: 'Shelve…', 'aria-haspopup': 'menu' });
-        btn.addEventListener('click', () => shelveMenu(a, btn));
+        const btn = h('button', { type: 'button', class: 'mc-btn', text: 'Shelve…', 'aria-haspopup': 'menu', ...locked });
+        btn.addEventListener('click', () => { if (mayOperate('shelve alarms')) shelveMenu(a, btn); });
         actions.push(btn);
       }
       const since = a.since ? `${formatAge(now - a.since)} ago` : '';

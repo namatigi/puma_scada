@@ -1,17 +1,12 @@
-// Users document (administrators): who may sign in to the studio and with
-// which role. Changes are saved at once through /api/studio/users; there is no
-// working copy, because user accounts are not part of the project.
+// Users document (administrators): who may sign in to the HMI and the studio,
+// and with which role. Changes are saved at once through /api/auth/users;
+// there is no working copy, because user accounts are not part of the project.
 
 import { toast } from '../shared/toast.js';
 import { h, formDialog, confirmDialog } from './ui.js';
+import { ROLE_INFO, ROLES } from '../shared/signin.js';
 
-export const ROLE_INFO = {
-  viewer: 'Opens the project and looks; cannot save.',
-  engineer: 'Edits and saves screens, tags, alarms and settings.',
-  admin: 'Engineer, and manages studio users.',
-};
-
-const ROLES = Object.keys(ROLE_INFO);
+export { ROLE_INFO };
 
 /** Asks for a new password twice. Resolves to the password, or null. */
 export async function askPassword(title, { current = false, text } = {}) {
@@ -33,7 +28,7 @@ export function createUsersDoc(root, { api, me }) {
   const add = h('button', { class: 'st-btn primary', type: 'button', text: 'Add user…' });
   const refresh = h('button', { class: 'st-btn', type: 'button', text: 'Refresh' });
   const tools = h('div', { class: 'st-grid-tools' }, add, refresh,
-    h('span', { class: 'st-users-note', text: 'Stored in users.toml in the runtime’s data folder, not in the project. Changes apply at once.' }));
+    h('span', { class: 'st-users-note', text: 'Sign-in for the HMI and the studio. Stored in users.toml in the runtime’s data folder, not in the project. Changes apply at once.' }));
   const wrap = h('div', { class: 'st-grid-wrap' });
   const doc = h('div', { class: 'st-doc' }, tools, wrap);
   root.appendChild(doc);
@@ -94,7 +89,7 @@ export function createUsersDoc(root, { api, me }) {
       title: 'Add user',
       fields: [
         { name: 'name', label: 'User name' },
-        { name: 'role', label: 'Role', options: ROLES.map((r) => ({ value: r, label: `${r} – ${ROLE_INFO[r]}` })), value: 'engineer' },
+        { name: 'role', label: 'Role', options: ROLES.map((r) => ({ value: r, label: `${r} – ${ROLE_INFO[r]}` })), value: 'operator' },
         { name: 'password', label: 'Password', type: 'password' },
         { name: 'again', label: 'Repeat it', type: 'password' },
       ],

@@ -61,7 +61,8 @@ impl RouterSwitch {
     /// A router sending only requests under `prefixes` (each `"/api/x"` covers
     /// `/api/x` and `/api/x/…`) to the current router. Unlike [`Self::router`]
     /// it has no fallback, so it can be merged into another router. Request
-    /// extensions are not passed on (no WebSocket upgrades on these routes).
+    /// extensions are not passed on (no WebSocket upgrades on these routes),
+    /// except the signed-in user.
     pub fn routes_for(&self, prefixes: &[&str]) -> Router {
         let mut r = Router::new();
         for p in prefixes {
@@ -83,10 +84,18 @@ impl RouterSwitch {
 /// The outer route's path parameters live in the request extensions, and the
 /// inner router would see them next to its own ("wrong number of path
 /// arguments"). The prefixed routes are plain REST, so nothing else in the
-/// extensions is needed downstream.
+/// extensions is needed downstream but who made the request.
 fn without_extensions(req: Request) -> Request {
     let (mut parts, body) = req.into_parts();
-    parts.extensions = axum::http::Extensions::new();
+    let mut kept = axum::http::Extensions::new();
+    // Who is signed in (set by the gateway's access check), for the alarm journal.
+    if let Some(actor) = parts.extensions.get::<moviclone_auth::Actor>() {
+        kept.insert(actor.clone());
+    }
+    if let Some(signed) = parts.extensions.get::<moviclone_auth::Signed>() {
+        kept.insert(signed.clone());
+    }
+    parts.extensions = kept;
     Request::from_parts(parts, body)
 }
 

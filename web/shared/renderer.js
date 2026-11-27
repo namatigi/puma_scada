@@ -11,6 +11,7 @@
 // SVG, positioned in real pixels, so canvas and table text stay sharp at any scale.
 
 import { s, h, uid, linearGradient, cssBackgroundToSvg } from './svg.js';
+import { mayOperate } from './access.js';
 import { formatValue, formatAge, truthy, toNumber, parseInputValue, formatDateTime, NO_VALUE } from './format.js';
 import { drawSymbol, symbolState, tube, collar } from './symbols.js';
 import { resolveSymbol, EMPTY_SYMBOL_MAP } from './symbolmap.js';
@@ -292,6 +293,7 @@ export function createScreenView(container, screen, opts = {}) {
       g.setAttribute('aria-label', `Edit ${el.tag}`);
       const openEd = (e) => {
         e.stopPropagation();
+        if (!mayOperate(`change ${el.tag}`)) return;
         openEditor(el, tagDef, lastSample);
       };
       g.addEventListener('click', openEd);

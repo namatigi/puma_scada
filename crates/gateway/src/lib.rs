@@ -29,7 +29,12 @@
 //! that origin is in `allowed_origins`, and `/api/` bodies must be JSON (415).
 //! Writes to one tag are serialized; a pulse on a tag that is still being
 //! written is refused with 409.
+//!
+//! With [`GatewayConfig::auth`], the HMI routes need a signed-in user: viewers
+//! watch, operators also write and act on alarms (see `access`). Without it
+//! (tests, embedding) everything is open.
 
+mod access;
 mod api;
 mod guard;
 mod project;
@@ -72,6 +77,8 @@ pub struct GatewayConfig {
     /// Origins besides the server's own whose pages may write, ack alarms or
     /// open the WebSocket, e.g. `https://scada.example.com` behind a proxy.
     pub allowed_origins: Vec<String>,
+    /// Users and sessions: when set, the HMI routes need a signed-in user.
+    pub auth: Option<Arc<moviclone_auth::Auth>>,
 }
 
 /// Environment variable with a comma-separated list for [`GatewayConfig::allowed_origins`].
@@ -95,6 +102,7 @@ impl GatewayConfig {
             shutdown: None,
             version: env!("CARGO_PKG_VERSION").to_string(),
             allowed_origins: Vec::new(),
+            auth: None,
         }
     }
 }
@@ -111,6 +119,7 @@ pub(crate) struct AppState {
     ws_clients: Arc<AtomicUsize>,
     version: Arc<str>,
     write_locks: Arc<writes::WriteLocks>,
+    auth: Option<Arc<moviclone_auth::Auth>>,
 }
 
 /// Builds the gateway's router (static files, REST, WebSocket, plus `extra`).
@@ -126,6 +135,7 @@ pub fn router(cfg: GatewayConfig) -> Router {
         ws_clients: Arc::new(AtomicUsize::new(0)),
         version: cfg.version.into(),
         write_locks: Arc::new(writes::WriteLocks::default()),
+        auth: cfg.auth.clone(),
     };
     let policy = Arc::new(guard::OriginPolicy::new(&cfg.allowed_origins));
     let api = Router::new()
@@ -135,10 +145,12 @@ pub fn router(cfg: GatewayConfig) -> Router {
         .route("/api/diagnostics", get(api::diagnostics))
         .route("/ws", get(ws::upgrade))
         .with_state(state);
-    statics::routes(cfg.web_root)
-        .merge(api)
-        .merge(cfg.extra)
-        .layer(axum::middleware::from_fn_with_state(policy, guard::guard))
+    let mut app = statics::routes(cfg.web_root).merge(api).merge(cfg.extra);
+    if let Some(auth) = cfg.auth {
+        app = app.merge(moviclone_auth::routes(auth.clone())).layer(axum::middleware::from_fn_with_state(auth, access::guard));
+    }
+    // Outermost: a cross-site request is refused before anything else looks at it.
+    app.layer(axum::middleware::from_fn_with_state(policy, guard::guard))
 }
 
 /// Serves `app` on `listener` until `shutdown` completes. Handlers can read the

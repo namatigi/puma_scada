@@ -3,7 +3,7 @@
 use crate::writes::WriteLocks;
 use crate::AppState;
 use axum::body::Bytes;
-use axum::extract::State;
+use axum::extract::{Extension, State};
 use axum::http::{header, StatusCode};
 use axum::response::{IntoResponse, Response};
 use axum::Json;
@@ -77,12 +77,13 @@ pub(crate) async fn execute_write(
     })
 }
 
-pub(crate) async fn write(State(st): State<AppState>, body: Bytes) -> Response {
+pub(crate) async fn write(State(st): State<AppState>, actor: Option<Extension<moviclone_auth::Actor>>, body: Bytes) -> Response {
     let body: WriteBody = match serde_json::from_slice(&body) {
         Ok(b) => b,
         Err(e) => return (StatusCode::BAD_REQUEST, Json(json!({"ok": false, "error": format!("invalid request: {e}")}))).into_response(),
     };
-    tracing::info!(tag = %body.tag, mode = ?body.mode, "write via REST");
+    let user = actor.map(|Extension(a)| a.0);
+    tracing::info!(tag = %body.tag, mode = ?body.mode, user = user.as_deref().unwrap_or("-"), "write via REST");
     match execute_write(&st.store, &st.write_locks, &body.tag, body.value, body.mode).await {
         Ok(()) => Json(json!({"ok": true})).into_response(),
         Err(Failure(status, error)) => (status, Json(json!({"ok": false, "error": error}))).into_response(),

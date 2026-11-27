@@ -43,6 +43,8 @@ struct Fixed {
     services: RouterSwitch,
     alarm_feed: watch::Sender<serde_json::Value>,
     studio: Option<Router>,
+    /// Users and sessions for the HMI and the studio (`<data>/users.toml`).
+    auth: Arc<moviclone_auth::Auth>,
 }
 
 /// Parts replaced by reloads.
@@ -63,15 +65,10 @@ pub async fn start(args: Args) -> anyhow::Result<Runtime> {
         tracing::warn!(web = %args.web.display(), "web folder not found; /hmi/ and /studio/ will answer 404");
     }
 
+    let users = moviclone_auth::users::users_file(&data_dir);
+    let auth = moviclone_auth::Auth::open(users, args.hmi_guest).map_err(anyhow::Error::msg).context("users")?;
     let (studio_tx, studio_rx) = watch::channel(0u64);
-    let studio = match args.studio {
-        true => {
-            let users = moviclone_studio::users::users_file(&data_dir);
-            let auth = moviclone_studio::Auth::open(users).map_err(anyhow::Error::msg).context("studio users")?;
-            Some(moviclone_studio::routes(args.project.clone(), auth, studio_tx))
-        }
-        false => None,
-    };
+    let studio = args.studio.then(|| moviclone_studio::routes(args.project.clone(), auth.clone(), studio_tx));
     let fixed = Arc::new(Fixed {
         data_dir,
         project: SharedProject::new(project.clone()),
@@ -79,6 +76,7 @@ pub async fn start(args: Args) -> anyhow::Result<Runtime> {
         services: RouterSwitch::unavailable(SERVICES),
         alarm_feed: watch::channel(services::empty_alarm_feed()).0,
         studio,
+        auth,
         args,
     });
 
@@ -161,7 +159,7 @@ fn gateway(fixed: &Fixed, core: &Core) -> Router {
     if let Some(studio) = &fixed.studio {
         extra = extra.merge(studio.clone());
     }
-    core.gateway(fixed.project.clone(), fixed.args.web.clone(), extra, vec![fixed.alarm_feed.subscribe()])
+    core.gateway(fixed.project.clone(), fixed.args.web.clone(), extra, vec![fixed.alarm_feed.subscribe()], fixed.auth.clone())
 }
 
 /// Applies studio saves until shutdown, then stops everything.

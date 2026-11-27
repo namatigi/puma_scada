@@ -406,7 +406,7 @@ select.st-cell option { background: #252526; }
 
 .mc-toasts { bottom: 34px !important; }
 
-/* Sign-in and user menu */
+/* User menu */
 .st-user { display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 8px; background: transparent; border: 1px solid transparent; color: var(--st-text-2); font: inherit; cursor: default; }
 .st-user:hover { background: var(--st-hover); border-color: var(--st-border); }
 .st-user .ic { width: 14px; height: 14px; }
@@ -414,20 +414,6 @@ select.st-cell option { background: #252526; }
 .st-role-admin { background: rgba(0, 122, 204, 0.25); color: #8cc8ff; }
 .st-role-engineer { background: rgba(108, 207, 108, 0.16); color: var(--st-green); }
 .st-role-viewer { background: rgba(255, 204, 0, 0.16); color: var(--st-yellow); }
-.st-signin-back { position: fixed; inset: 0; z-index: 200; display: flex; align-items: center; justify-content: center; background: var(--st-editor); }
-.st-signin-back.modal { background: rgba(0, 0, 0, 0.6); }
-.st-signin { width: min(400px, calc(100vw - 32px)); padding: 24px 26px 22px; background: var(--st-panel); border: 1px solid var(--st-border); border-top: 2px solid var(--st-accent); box-shadow: var(--mc-shadow); }
-.st-signin-brand { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
-.st-signin-product { color: var(--st-dim); font-size: 11px; letter-spacing: .04em; text-transform: uppercase; }
-.st-signin h1 { margin: 2px 0 0; font-size: 18px; font-weight: 400; color: var(--st-text); }
-.st-signin-text { margin: 0 0 14px; color: var(--st-text-2); line-height: 1.5; }
-.st-signin-form { display: flex; flex-direction: column; gap: 10px; }
-.st-signin-form label { display: flex; flex-direction: column; gap: 4px; color: var(--st-text-2); }
-.st-signin-form input { height: 30px; padding: 0 8px; background: var(--st-input); border: 1px solid var(--st-input-border); color: var(--st-text); font: 13px var(--st-font); outline: none; }
-.st-signin-form input:focus { border-color: var(--st-accent); }
-.st-signin-err { min-height: 18px; color: #ff9a9a; }
-.st-signin-actions { display: flex; justify-content: flex-end; }
-.st-signin-actions .st-btn { height: 28px; padding: 0 16px; }
 .st-users td { vertical-align: middle; }
 .st-users select { height: 22px; background: var(--st-input); border: 1px solid var(--st-input-border); color: var(--st-text); }
 .st-users-role { color: var(--st-dim); }

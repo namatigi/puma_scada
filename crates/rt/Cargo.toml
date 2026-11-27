@@ -28,6 +28,7 @@ moviclone-gateway.workspace = true
 moviclone-historian.workspace = true
 moviclone-alarms.workspace = true
 moviclone-studio.workspace = true
+moviclone-auth.workspace = true
 tokio.workspace = true
 axum.workspace = true
 tower = { version = "0.5", features = ["util"] }

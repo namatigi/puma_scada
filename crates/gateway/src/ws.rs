@@ -3,7 +3,7 @@
 use crate::api::{execute_write, sample_json, values_json, Failure};
 use crate::AppState;
 use axum::extract::ws::{Message, WebSocket, WebSocketUpgrade};
-use axum::extract::State;
+use axum::extract::{Extension, State};
 use axum::response::Response;
 use futures_util::{SinkExt, StreamExt};
 use moviclone_model::WriteMode;
@@ -26,6 +26,8 @@ const OUT_QUEUE: usize = 256;
 pub(crate) const MAX_PENDING_WRITES: usize = 16;
 /// How long queued messages and the close frame may take to go out at the end.
 const WRITER_GRACE: Duration = Duration::from_secs(2);
+/// How often an open socket checks that its session is still valid.
+const SESSION_CHECK: Duration = Duration::from_secs(20);
 
 #[derive(Debug, Deserialize)]
 #[serde(tag = "op", rename_all = "kebab-case")]
@@ -48,8 +50,9 @@ enum ClientMsg {
     Ping,
 }
 
-pub(crate) async fn upgrade(ws: WebSocketUpgrade, State(st): State<AppState>) -> Response {
-    ws.max_message_size(MAX_MESSAGE).on_upgrade(move |socket| session(socket, st))
+pub(crate) async fn upgrade(ws: WebSocketUpgrade, State(st): State<AppState>, who: Option<Extension<moviclone_auth::Signed>>) -> Response {
+    let who = who.map(|Extension(s)| s);
+    ws.max_message_size(MAX_MESSAGE).on_upgrade(move |socket| session(socket, st, who))
 }
 
 struct Session {
@@ -60,6 +63,8 @@ struct Session {
     pending: HashMap<TagId, Sample>,
     /// In-flight writes of this session (each holds a permit until it is answered).
     writes: Arc<Semaphore>,
+    /// The signed-in user (with sign-in enabled; `None` for a guest viewer).
+    who: Option<moviclone_auth::Signed>,
 }
 
 impl Session {
@@ -119,11 +124,18 @@ impl Session {
                 self.send_values(self.st.store.ids()).await
             }
             ClientMsg::Write { id, tag, value, mode } => {
+                let user = match self.may_write() {
+                    Ok(user) => user,
+                    Err(error) => {
+                        tracing::warn!(%tag, error, "refusing websocket write");
+                        return self.send(json!({"type": "write-result", "id": id, "ok": false, "error": error, "auth": true})).await;
+                    }
+                };
                 let Ok(permit) = self.writes.clone().try_acquire_owned() else {
                     tracing::debug!(%tag, "refusing websocket write: too many pending writes");
                     return self.send(json!({"type": "write-result", "id": id, "ok": false, "error": "too many pending writes"})).await;
                 };
-                tracing::info!(%tag, ?mode, "write via websocket");
+                tracing::info!(%tag, ?mode, user = user.as_deref().unwrap_or("-"), "write via websocket");
                 let store = self.st.store.clone();
                 let locks = self.st.write_locks.clone();
                 let out = self.out.clone();
@@ -139,6 +151,28 @@ impl Session {
                 true
             }
             ClientMsg::Ping => self.send(json!({"type": "pong"})).await,
+        }
+    }
+
+    /// With sign-in, a write needs a valid session with the operator role,
+    /// checked on every write (it counts as activity). Answers the user name.
+    fn may_write(&mut self) -> Result<Option<String>, String> {
+        let Some(auth) = &self.st.auth else { return Ok(None) };
+        let Some(who) = &self.who else {
+            return Err("sign in as an operator to write".into());
+        };
+        let me = auth.check(who.token(), true).map_err(|_| "your session ended; sign in again".to_string())?;
+        me.require(moviclone_auth::Role::Operator, "writing").map_err(|_| format!("{} is signed in as {}; writing needs the operator role", me.name, me.role))?;
+        let name = me.name.clone();
+        self.who = Some(me);
+        Ok(Some(name))
+    }
+
+    /// `false` when sign-in is on and this socket's session has ended.
+    fn session_valid(&self) -> bool {
+        match (&self.st.auth, &self.who) {
+            (Some(auth), Some(who)) => auth.check(who.token(), false).is_ok(),
+            _ => true,
         }
     }
 
@@ -231,7 +265,7 @@ fn forward_reload(tasks: &mut JoinSet<()>, mut rx: watch::Receiver<u64>, out: mp
     });
 }
 
-async fn session(socket: WebSocket, st: AppState) {
+async fn session(socket: WebSocket, st: AppState, who: Option<moviclone_auth::Signed>) {
     st.ws_clients.fetch_add(1, Ordering::Relaxed);
     let (mut sink, mut stream) = socket.split();
     let (out, mut out_rx) = mpsc::channel::<String>(OUT_QUEUE);
@@ -255,6 +289,7 @@ async fn session(socket: WebSocket, st: AppState) {
         subscribed: HashSet::new(),
         pending: HashMap::new(),
         writes: Arc::new(Semaphore::new(MAX_PENDING_WRITES)),
+        who,
     };
 
     if s.send(hello(&st)).await {
@@ -269,8 +304,15 @@ async fn session(socket: WebSocket, st: AppState) {
 
         let mut publish = publish_interval(&st);
         let mut shutdown = st.shutdown.clone();
+        let mut session_check = tokio::time::interval(SESSION_CHECK);
+        session_check.tick().await;
         loop {
             tokio::select! {
+                _ = session_check.tick() => if !s.session_valid() {
+                    tracing::info!("closing a websocket: its session ended");
+                    let _ = s.send(json!({"type": "signed-out"})).await;
+                    break;
+                },
                 msg = stream.next() => match msg {
                     Some(Ok(Message::Text(text))) => if !s.on_message(&text).await { break },
                     Some(Ok(Message::Binary(_))) => tracing::debug!("ignoring binary websocket message"),

@@ -1,12 +1,14 @@
 //! HTTP routes from docs/PROTOCOL.md.
 //!
-//! POST bodies are optional JSON; `user` may be given for the journal
-//! (`{"user":"op1"}`, `{"minutes":30,"user":"op1"}`) until the runtime has
-//! authenticated sessions.
+//! POST bodies are optional JSON. With sign-in on, the journal records the
+//! signed-in user (the gateway's [`Actor`]) and a `user` in the body is
+//! ignored; without it, `{"user":"op1"}` / `{"minutes":30,"user":"op1"}` name
+//! the user.
 
 use crate::engine::{AlarmEngine, AlarmError};
 use axum::body::Bytes;
-use axum::extract::{Path, Query, State};
+use axum::extract::{Extension, Path, Query, State};
+use moviclone_auth::Actor;
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use axum::routing::{get, post};
@@ -60,24 +62,30 @@ async fn journal(State(e): Engine, Query(q): Query<JournalQuery>) -> Json<serde_
     Json(json!({ "events": e.journal(limit) }))
 }
 
-async fn ack(State(e): Engine, Path(name): Path<String>, body: Bytes) -> Response {
-    let body: UserBody = match optional_body(&body) {
-        Ok(b) => b.unwrap_or_default(),
-        Err(r) => return r,
-    };
-    result(e.ack(&name, body.user.as_deref()).map(|_| ()))
+/// Who acted: the signed-in user when sign-in is on (the gateway sets
+/// [`Actor`]), otherwise the `user` the client sent, if any.
+fn who(actor: Option<Extension<Actor>>, sent: Option<String>) -> Option<String> {
+    actor.map(|Extension(a)| a.0).or(sent)
 }
 
-async fn ack_all(State(e): Engine, body: Bytes) -> Response {
+async fn ack(State(e): Engine, actor: Option<Extension<Actor>>, Path(name): Path<String>, body: Bytes) -> Response {
     let body: UserBody = match optional_body(&body) {
         Ok(b) => b.unwrap_or_default(),
         Err(r) => return r,
     };
-    let acked = e.ack_all(body.user.as_deref());
+    result(e.ack(&name, who(actor, body.user).as_deref()).map(|_| ()))
+}
+
+async fn ack_all(State(e): Engine, actor: Option<Extension<Actor>>, body: Bytes) -> Response {
+    let body: UserBody = match optional_body(&body) {
+        Ok(b) => b.unwrap_or_default(),
+        Err(r) => return r,
+    };
+    let acked = e.ack_all(who(actor, body.user).as_deref());
     Json(json!({ "ok": true, "acked": acked })).into_response()
 }
 
-async fn shelve(State(e): Engine, Path(name): Path<String>, body: Bytes) -> Response {
+async fn shelve(State(e): Engine, actor: Option<Extension<Actor>>, Path(name): Path<String>, body: Bytes) -> Response {
     let body: ShelveBody = match optional_body(&body) {
         Ok(Some(b)) => b,
         Ok(None) => return error(StatusCode::BAD_REQUEST, "body {\"minutes\":N} is required".into()),
@@ -87,15 +95,15 @@ async fn shelve(State(e): Engine, Path(name): Path<String>, body: Bytes) -> Resp
         return error(StatusCode::BAD_REQUEST, format!("minutes must be a positive number, got {}", body.minutes));
     }
     let duration = Duration::from_secs_f64((body.minutes * 60.0).min(1e9));
-    result(e.shelve(&name, duration, body.user.as_deref()))
+    result(e.shelve(&name, duration, who(actor, body.user).as_deref()))
 }
 
-async fn unshelve(State(e): Engine, Path(name): Path<String>, body: Bytes) -> Response {
+async fn unshelve(State(e): Engine, actor: Option<Extension<Actor>>, Path(name): Path<String>, body: Bytes) -> Response {
     let body: UserBody = match optional_body(&body) {
         Ok(b) => b.unwrap_or_default(),
         Err(r) => return r,
     };
-    result(e.unshelve(&name, body.user.as_deref()))
+    result(e.unshelve(&name, who(actor, body.user).as_deref()))
 }
 
 /// Parses an optional JSON body; an empty body is `None`, so a body-less

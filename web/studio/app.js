@@ -8,8 +8,8 @@ import { toast } from '../shared/toast.js';
 import { formatValue } from '../shared/format.js';
 import { createStore } from './store.js';
 import { createStudioApi, StudioApiError } from './studio-api.js';
-import { signIn } from './signin.js';
-import { createUsersDoc, askPassword, ROLE_INFO } from './users-doc.js';
+import { signIn, ROLE_INFO } from '../shared/signin.js';
+import { createUsersDoc, askPassword } from './users-doc.js';
 import { createCommands } from './commands.js';
 import { createMenuBar, createToolbar, openPalette } from './chrome.js';
 import { createExplorer } from './explorer.js';
@@ -55,7 +55,7 @@ async function boot() {
   let res;
   try {
     const session = await api.session();
-    me = session.user ?? (await signIn(api, session));
+    me = session.user ?? (await signIn(api, session, { product: 'Moviclone Studio' }));
     api.onSignedOut = signInAgain;
     document.getElementById('boot').replaceChildren(h('div', { class: 'st-logo st-logo-big' }), h('div', { text: 'Loading project…' }));
     [res, symbolMap] = await Promise.all([api.project(), loadSymbolMap()]);
@@ -87,7 +87,7 @@ function signInAgain() {
     try {
       const session = await api.session().catch(() => ({}));
       const prev = me;
-      me = session.user ?? (await signIn(api, session, { modal: true, name: me?.name ?? '', reason: 'Your studio session ended. Sign in again to go on; your unsaved edits are kept.' }));
+      me = session.user ?? (await signIn(api, session, { modal: true, product: 'Moviclone Studio', name: me?.name ?? '', reason: 'Your session ended. Sign in again to go on; your unsaved edits are kept.' }));
       if (prev && prev.name.toLowerCase() !== me.name.toLowerCase()) store.log(`Signed in as ${me.name} (${me.role}) instead of ${prev.name}`, 'warn');
       renderUser();
       return true;
@@ -298,7 +298,7 @@ function openDoc(docId) {
   const [title, ic] = DOC_TITLES[docId] ?? [];
   if (!title) return null;
   if (docId === 'users') {
-    if (!isAdmin()) { toast('Only administrators manage studio users', { kind: 'warn' }); return null; }
+    if (!isAdmin()) { toast('Only administrators manage users', { kind: 'warn' }); return null; }
     return docs.open(docId, { title, icon: ic, create: (holder) => createUsersDoc(holder, { api, me: () => me }) });
   }
   const factory = { tags: createTagsDoc, alarms: createAlarmsDoc, settings: createSettingsDoc, data: createDataDoc, xref: createXrefDoc }[docId];

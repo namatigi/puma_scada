@@ -29,14 +29,14 @@ Quality is `"good" | "uncertain" | "bad"`.
 | `POST /api/alarms/{name}/shelve` body `{"minutes":30}` / `…/unshelve` | alarms | `{"ok":true}` |
 | `GET /api/alarms/journal?limit=200` | alarms | `{"events":[AlarmEvent…]}` newest first |
 | `GET /api/diagnostics` | gateway | `{"drivers":[{"name":…,"connected":bool,"requests":n,"errors":n,"last_error":…}], "uptime_s":…}` |
-| `GET /api/studio/session` | studio | `{"ok":true,"user":{"name":"…","role":"viewer|engineer|admin"}|null,"setup":bool,"can_setup":bool}` |
-| `POST /api/studio/session` body `{"name","password"}` | studio | signs in: `{"ok":true,"user":{…}}` and a `Set-Cookie: mc_studio=…; HttpOnly; SameSite=Strict` |
-| `DELETE /api/studio/session` | studio | signs out (clears the cookie) |
-| `POST /api/studio/setup` body `{"name","password"}` | studio | creates the first administrator and signs in; only while there are no users, only from loopback |
-| `PUT /api/studio/password` body `{"current","new"}` | studio | changes the signed-in user's password |
-| `GET /api/studio/users` | studio | (admin) `{"ok":true,"users":[{"name","role"}…],"roles":[…]}` |
-| `PUT /api/studio/users/{name}` body `{"role"?,"password"?}` | studio | (admin) creates a user (both fields) or changes role and/or password |
-| `DELETE /api/studio/users/{name}` | studio | (admin) removes a user and ends their sessions |
+| `GET /api/auth/session` | auth | `{"ok":true,"user":{"name":"…","role":"viewer|operator|engineer|admin"}|null,"setup":bool,"can_setup":bool,"guest_view":bool}` |
+| `POST /api/auth/session` body `{"name","password"}` | auth | signs in: `{"ok":true,"user":{…}}` and a `Set-Cookie: mc_session=…; Path=/; HttpOnly; SameSite=Strict` |
+| `DELETE /api/auth/session` | auth | signs out (clears the cookie) |
+| `POST /api/auth/setup` body `{"name","password"}` | auth | creates the first administrator and signs in; only while there are no users, only from loopback |
+| `PUT /api/auth/password` body `{"current","new"}` | auth | changes the signed-in user's password; their other sessions end |
+| `GET /api/auth/users` | auth | (admin) `{"ok":true,"users":[{"name","role"}…],"roles":[…]}` |
+| `PUT /api/auth/users/{name}` body `{"role"?,"password"?}` | auth | (admin) creates a user (both fields) or changes role and/or password |
+| `DELETE /api/auth/users/{name}` | auth | (admin) removes a user and ends their sessions |
 | `GET /api/studio/project` | studio | `{"project":Project,"versions":{"meta":"…","tags":"…","alarms":"…","screen:<name>":"…"},"diagnostics":[Diagnostic…]}` |
 | `PUT /api/studio/screens/{name}` body Screen | studio | saves `screens/<name>.toml`; `{"ok":bool,"file":"…","version":"…","diagnostics":[…]}` |
 | `DELETE /api/studio/screens/{name}` | studio | removes the screen |
@@ -46,15 +46,29 @@ Quality is `"good" | "uncertain" | "bad"`.
 
 `Diagnostic` JSON: `{"severity":"error|warning|note","code":"E011","file":"tags.toml","item":"tag \"X\"","message":"…"}`.
 
-**Studio users.** Every `/api/studio/…` route except `session` and `setup`
-needs the session cookie. Without a valid session the answer is **401**
-`{"ok":false,"auth":"required","error":"…"}`; a role that may not do something
-gets **403** `{"ok":false,"auth":"forbidden","error":"…"}`. Viewers may `GET`;
-saves and deletes need `engineer`; `/api/studio/users…` needs `admin`. Wrong
-passwords answer 401 (the same message for unknown names); after 5 in a row the
-name answers **429** for 30 s. The last administrator cannot be demoted, and an
-administrator cannot remove themself. Users are kept in `<data>/users.toml`
-(Argon2id hashes); see README, *Studio users*.
+**Sign-in.** Every `/api/…` route except `/api/auth/session` and
+`/api/auth/setup`, and `/ws`, needs the session cookie; static pages do not.
+Without a valid session the answer is **401** `{"ok":false,"auth":"required","error":"…"}`;
+a role that may not do something gets **403** `{"ok":false,"auth":"forbidden","error":"…"}`.
+
+| Needs | Routes |
+|---|---|
+| viewer | every `GET` (`/api/bundle`, `/api/values`, `/api/history…`, `/api/alarms…`, `/api/diagnostics`, `/api/studio/project`), and `/ws` |
+| operator | `POST /api/write`, `POST /api/alarms/…` (ack, ack-all, shelve, unshelve), and WebSocket `write` |
+| engineer | studio `PUT`/`DELETE` |
+| admin | `/api/auth/users…` |
+
+With the runtime's `--hmi-guest`, the viewer routes also answer without a
+session (`guest_view` in the session answer says so). A WebSocket `write` is
+checked when it arrives; a refused one answers
+`{"type":"write-result","id":…,"ok":false,"auth":true,"error":"…"}`. An open
+socket whose session ends is sent `{"type":"signed-out"}` and closed. With
+sign-in on, the alarm journal's `user` is the signed-in user and a `user` in
+the request body is ignored. Wrong passwords answer 401 (the same message for
+unknown names); after 5 in a row the name answers **429** for 30 s. The last
+administrator cannot be demoted, and an administrator cannot remove themself.
+Users are kept in `<data>/users.toml` (Argon2id hashes); see README, *Users and
+sign-in*.
 
 **Studio file versions.** `versions` holds a hash of each edited file (`"absent"`
 when it does not exist). A studio `PUT` or `DELETE` may send the version it was
@@ -95,6 +109,7 @@ Server → client:
 {"type":"write-result","id":8,"ok":false,"error":"tag \"FM_01_Temp\" is read-only"}
 {"type":"alarms","alarms":[AlarmState…]}       // full list, sent on connect and whenever it changes
 {"type":"reload"}                               // project changed on disk (studio save); clients refetch /api/bundle
+{"type":"signed-out"}                           // the session ended (sign-out, timeout, removed user); the socket closes
 {"type":"pong"}
 ```
 After a `subscribe`, the server immediately sends current values of the newly

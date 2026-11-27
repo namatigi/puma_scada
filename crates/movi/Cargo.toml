@@ -13,4 +13,4 @@ clap.workspace = true
 anyhow.workspace = true
 serde_json.workspace = true
 rpassword = "7"
-moviclone-studio.workspace = true
+moviclone-auth.workspace = true

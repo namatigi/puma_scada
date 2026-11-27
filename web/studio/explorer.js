@@ -62,8 +62,8 @@ export function createExplorer(root, { store, open, actions, isAdmin = () => fal
           ],
         },
         isAdmin()
-          ? { id: 'users', label: 'Users', icon: 'users', doc: 'users', title: 'Who may sign in to the studio, and their roles' }
-          : { id: 'users', label: 'Users', icon: 'users', dim: true, title: 'Only administrators manage studio users' },
+          ? { id: 'users', label: 'Users', icon: 'users', doc: 'users', title: 'Who may sign in to the HMI and the studio, and their roles' }
+          : { id: 'users', label: 'Users', icon: 'users', dim: true, title: 'Only administrators manage users' },
       ],
     }];
   }

@@ -4,6 +4,7 @@
 //   c.on('values', (changes) => …); c.on('alarms', (list) => …);
 //   c.on('status', (s) => …)  // 'connecting' | 'open' | 'closed'
 //   c.on('hello', (msg) => …); c.on('reload', () => …);
+//   c.on('signed-out', () => …)  // the server ended the socket: its sign-in session ended
 //   c.setTags(['A','B']);       // desired subscription set; diffs are sent
 //   await c.write('A', 1, 'pulse')  // -> {ok, error?}
 //   c.connect(); c.close();
@@ -136,6 +137,9 @@ export function createWsClient({ url = defaultWsUrl(), writeTimeoutMs = 12000, p
       case 'alarms':
         ev.emit('alarms', msg.alarms ?? []);
         break;
+      case 'signed-out':
+        ev.emit('signed-out', msg);
+        break;
       case 'reload':
         ev.emit('reload', msg);
         break;
@@ -221,6 +225,20 @@ export function createWsClient({ url = defaultWsUrl(), writeTimeoutMs = 12000, p
       ws = null;
       failPending('client closed');
       setStatus('closed');
+    },
+    /** Drops the socket and opens a new one at once (e.g. after signing in as someone else). */
+    reconnect() {
+      if (stopped) return;
+      clearTimeout(retryTimer);
+      retryTimer = null;
+      clearInterval(pingTimer);
+      const old = ws;
+      ws = null;
+      if (old) { old.onclose = null; old.close(); }
+      subscribed.clear();
+      failPending('reconnecting');
+      attempt = 0;
+      open();
     },
     /** Replaces the desired subscription set. */
     setTags(tags) {

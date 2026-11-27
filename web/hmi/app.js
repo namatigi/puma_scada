@@ -3,6 +3,10 @@
 // Routes (hash):  #<Screen>   a screen (small screens open as floating panels)
 //                 #!screens   screen navigator      #!alarms   alarm page
 // index.html?mock runs entirely in the browser from mock/bundle.json.
+//
+// Sign-in (docs/PROTOCOL.md): viewers watch, operators also write values and
+// act on alarms. With the runtime's --hmi-guest the HMI can be watched without
+// signing in; operators sign in from the top bar.
 
 import { createHttpApi } from '../shared/api.js';
 import { createWsClient } from '../shared/client.js';
@@ -16,6 +20,8 @@ import { createPanels } from './panels.js';
 import { createNavigator } from './navigator.js';
 import { createAlarmPage } from './alarmpage.js';
 import { screenFromHash } from './hash.js';
+import { createAuthApi, signIn, roleAtLeast, changePasswordDialog } from '../shared/signin.js';
+import { setAccess, canOperate, mayOperate } from '../shared/access.js';
 
 const params = new URLSearchParams(window.location.search);
 const MOCK = params.has('mock');
@@ -29,7 +35,12 @@ const state = {
   /** current page: {kind:'screen', name, view} | {kind:'screens'|'alarms', page} */
   current: null,
   depth: 0,
+  /** Signed-in user {name, role}, or null (guest viewing, or ?mock). */
+  me: null,
+  /** The runtime lets people watch without signing in (--hmi-guest). */
+  guestView: false,
 };
+const auth = MOCK ? null : createAuthApi('');
 
 const mainEl = document.getElementById('main');
 let topbar;
@@ -47,9 +58,13 @@ async function boot() {
       state.api = backend.api;
       state.client = backend.client;
     } else {
-      state.api = createHttpApi('');
+      const session = await auth.session();
+      state.guestView = Boolean(session.guest_view);
+      state.me = session.user ?? (await signIn(auth, session, { product: 'Moviclone HMI', allowGuest: state.guestView }));
+      state.api = createHttpApi('', { onSignedOut: signInAgain });
       state.client = createWsClient();
     }
+    applyAccess();
     [state.project, state.symbolMap] = await Promise.all([state.api.bundle(), loadSymbolMap()]);
     validateBundle(state.project);
   } catch (err) {
@@ -65,6 +80,7 @@ async function boot() {
     onAlarms: () => navigate('!alarms'),
   });
   topbar.setProject(state.project.meta?.name ?? 'Project');
+  if (!MOCK) topbar.setUser(state.me, { onSignIn: () => signInAgain({ fresh: true }), onPassword: changePassword, onSignOut: signOut });
   panels = createPanels(document.getElementById('panels'), { viewOptions, onChange: syncSubscriptions });
 
   const { client } = state;
@@ -79,6 +95,9 @@ async function boot() {
   });
   client.on('alarms', setAlarms);
   client.on('reload', reloadProject);
+  client.on('signed-out', sessionEnded);
+  // A runtime restart or a session that ended while offline is noticed when the connection drops or returns.
+  client.on('status', (st) => { if ((st === 'closed' || st === 'open') && !MOCK) checkSessionSoon(); });
   topbar.setConnection(client.status, MOCK);
   topbar.setAlarms([]);
   client.connect();
@@ -88,6 +107,97 @@ async function boot() {
   window.addEventListener('hashchange', route);
   document.addEventListener('keydown', onKey);
   route();
+}
+
+// ---------------------------------------------------------------- sign-in
+
+function applyAccess() {
+  setAccess({
+    canOperate: () => MOCK || roleAtLeast(state.me?.role, 'operator'),
+    onDenied: (what) => {
+      if (!state.me) {
+        toast(`Sign in as an operator to ${what}`, { kind: 'warn' });
+        signInAgain({ fresh: true });
+      } else {
+        toast(`${state.me.name} is a ${state.me.role}: to ${what} you need the operator role`, { kind: 'warn', timeout: 4500 });
+      }
+    },
+  });
+  document.body.classList.toggle('hmi-view-only', !canOperate());
+  topbar?.setUser(state.me, {});
+}
+
+let reauth = null;
+/**
+ * Signs in over the open HMI (screens keep running underneath). Used when a
+ * request is refused because the session ended, and by the top bar's Sign in.
+ * Resolves true once someone is signed in.
+ */
+function signInAgain({ fresh = false } = {}) {
+  reauth ??= (async () => {
+    try {
+      const session = await auth.session().catch(() => ({}));
+      let user = fresh ? null : session.user;
+      if (!user) {
+        user = await signIn(auth, session, {
+          modal: true,
+          product: 'Moviclone HMI',
+          name: state.me?.name ?? '',
+          allowGuest: state.guestView,
+          title: fresh ? 'Sign in' : '',
+          reason: fresh ? '' : 'Your session ended. Sign in again to go on.',
+        });
+      }
+      const changed = (user?.name ?? '') !== (state.me?.name ?? '');
+      state.me = user;
+      applyAccess();
+      // The WebSocket carries the session it was opened with.
+      if (changed) state.client.reconnect?.();
+      if (user) toast(`Signed in as ${user.name} (${user.role})`, { kind: 'ok', timeout: 2500 });
+      return Boolean(user);
+    } finally {
+      reauth = null;
+    }
+  })();
+  return reauth;
+}
+
+/** The server closed the socket because the session ended. */
+function sessionEnded() {
+  if (state.guestView) {
+    const who = state.me?.name;
+    state.me = null;
+    applyAccess();
+    if (who) toast(`${who} was signed out (the session ended); still watching`, { kind: 'warn', timeout: 5000 });
+    return;
+  }
+  signInAgain();
+}
+
+let sessionCheck = null;
+/** Brings the page in line with the server's view of the session (ended, or a new role). */
+function checkSessionSoon() {
+  clearTimeout(sessionCheck);
+  sessionCheck = setTimeout(async () => {
+    if (reauth) return;
+    try {
+      const s = await auth.session();
+      if (!s.user && state.me) sessionEnded();
+      else if (s.user && (s.user.name !== state.me?.name || s.user.role !== state.me?.role)) {
+        state.me = s.user;
+        applyAccess();
+      }
+    } catch { /* runtime offline: the connection indicator says so */ }
+  }, 1500);
+}
+
+async function changePassword() {
+  if (await changePasswordDialog(auth, { product: 'Moviclone HMI' })) toast('Password changed', { kind: 'ok' });
+}
+
+async function signOut() {
+  try { await auth.signOut(); } catch { /* signed out anyway */ }
+  window.location.reload();
 }
 
 function setAlarms(list) {
@@ -265,6 +375,7 @@ async function runCommand(cmd, ctx = {}) {
       return;
     }
     case 'write-tag': {
+      if (!mayWrite(cmd.tag)) return;
       const tag = state.project.tags?.find((t) => t.name === cmd.tag);
       if (!tag) {
         toast(`Tag "${cmd.tag}" does not exist`, { kind: 'error' });
@@ -289,6 +400,10 @@ async function runCommand(cmd, ctx = {}) {
     default:
       toast(`Unknown command "${cmd.action}"`, { kind: 'warn' });
   }
+}
+
+function mayWrite(tag) {
+  return mayOperate(`write ${tag}`);
 }
 
 /** Client position of an element's right edge, to open its panel beside it. */

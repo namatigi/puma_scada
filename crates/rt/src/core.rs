@@ -79,8 +79,10 @@ impl Core {
         web: PathBuf,
         extra: Router,
         ws_feeds: Vec<watch::Receiver<serde_json::Value>>,
+        auth: Arc<moviclone_auth::Auth>,
     ) -> Router {
         let mut cfg = GatewayConfig::new(project, self.store.clone(), web);
+        cfg.auth = Some(auth);
         cfg.extra = extra;
         cfg.ws_feeds = ws_feeds;
         cfg.shutdown = Some(self.stop.subscribe());

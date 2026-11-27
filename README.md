@@ -19,14 +19,15 @@ This builds the release binaries, checks `demo/oxoafrica` with `movi build`, and
 runs it with the Modbus simulator and the studio API:
 
 - HMI: http://127.0.0.1:8080/hmi/ (Manifold, FM_01…FM_04 panels, trend screens, alarms)
-- Studio: http://127.0.0.1:8080/studio/ (sign in, edit, Ctrl+S, the running HMI reloads)
+- Studio: http://127.0.0.1:8080/studio/ (edit, Ctrl+S, the running HMI reloads)
 
-The studio asks you to sign in. On the first visit there are no users yet: open
-it on the machine the runtime runs on and create the administrator there (see
-*Studio users*).
+Both ask you to sign in (one sign-in covers both). On the first visit there are
+no users yet: open the HMI or the studio on the machine the runtime runs on and
+create the administrator there (see *Users and sign-in*).
 
-Options: `-Listen 0.0.0.0:8080` for tablets on the LAN, `-NoBuild`, `-Fresh`
-(empty history and alarm journal). What the demo changes compared with the
+Options: `-Listen 0.0.0.0:8080` for tablets on the LAN, `-HmiGuest` (watch the
+HMI without signing in, e.g. a wall display), `-NoBuild`, `-Fresh` (empty
+history and alarm journal). What the demo changes compared with the
 imported project, and why its alarms fire, is in [demo/README.md](demo/README.md).
 
 By hand (bash):
@@ -42,6 +43,7 @@ cargo run --release -p moviclone-rt -- demo/oxoafrica --simulate --studio --web 
 |---|---|
 | `--simulate` | start the Modbus simulator on a free local port and point every modbus-tcp driver at it (project files unchanged) |
 | `--studio` | mount `/api/studio/…`; saves are applied to the running project (see *Hot reload*) |
+| `--hmi-guest` | anyone who reaches the HMI may watch it without signing in; writes and alarm actions still need an operator |
 | `--data` | historian database and alarm journal/state (default `<project>/data`) |
 | `--allow-errors` | start, and apply studio saves, even when `movi build` would report errors |
 | `--features mssql` (build) | forward history and data-logger rows to SQL Server (secrets via `MOVICLONE_SECRET_<NAME>`) |
@@ -91,6 +93,7 @@ engine saves its state, drivers disconnect.
 | `crates/historian` | store-and-forward journal on redb, downsampled trend queries, history tables, data loggers, SQL Server forwarder (`mssql` feature) |
 | `crates/alarms` | ISA-18.2 alarm engine: conditions, delay, deadband, ack, shelving, journal, persisted state |
 | `crates/studio` | studio backend: read/write project files with validation and atomic writes |
+| `crates/auth` | users, roles and sign-in sessions for the HMI and the studio (`users.toml`, Argon2id, `/api/auth/…`) |
 | `crates/rt` | the `moviclone-rt` binary/library: wires everything together, hot reload, end-to-end tests |
 
 ### Web
@@ -134,27 +137,40 @@ Passwords can't be stored in these files: `password` only accepts a
 `secret://name` reference (resolved from `MOVICLONE_SECRET_<NAME>`), and anything
 else fails to load.
 
-## Studio users
+## Users and sign-in
 
-The studio needs a signed-in user. Each user has a role:
+The HMI and the studio need a signed-in user; one sign-in covers both (a cookie
+for the whole site). Each user has a role, and each role includes the ones above it:
 
-| Role | May |
-|---|---|
-| `viewer` | open the project and look (live values, Problems, Cross Reference); nothing is saved |
-| `engineer` | also save screens, tags, alarms and project settings |
-| `admin` | also add and remove users, set roles and reset passwords (Tools › Manage Users, or Users in the Project Explorer) |
+| Role | HMI | Studio |
+|---|---|---|
+| `viewer` | watch screens, trends and alarms | open the project read-only |
+| `operator` | also write values (entry fields, buttons) and acknowledge or shelve alarms | read-only |
+| `engineer` | as operator | also save screens, tags, alarms and project settings |
+| `admin` | as operator | also add and remove users, set roles and reset passwords (Tools › Manage Users, or Users in the Project Explorer) |
+
+The server checks the role on every request and every WebSocket write; the
+pages only grey out what the role cannot do. The alarm journal records the
+signed-in user for every acknowledgement and shelving, and the log names the
+user of every write and save.
+
+With `--hmi-guest` (`-HmiGuest` in the demo script) anyone who reaches the HMI
+may watch it without signing in, e.g. a wall display; the top bar then shows
+*Sign in*, and writing or acknowledging asks for an operator.
 
 Users live in `users.toml` in the runtime's **data folder** (`--data`, default
 `<project>/data`), not in the project, so they never travel with the project and
 a project save cannot change them. Passwords are stored only as Argon2id hashes.
 
-- **First administrator**: while there are no users, the studio offers to create
-  one, but only to a browser on the machine the runtime runs on (loopback). From
-  elsewhere it says to do that, or to use `movi users`.
+- **First administrator**: while there are no users, the HMI and the studio
+  offer to create one, but only to a browser on the machine the runtime runs on
+  (loopback). From elsewhere they say to do that, or to use `movi users`.
 - **Sessions**: an `HttpOnly`, `SameSite=Strict` cookie, ended after 8 hours
-  without use, by Sign Out, or when the runtime restarts. When a session ends
-  while someone is working, the studio asks them to sign in again and keeps their
-  unsaved edits.
+  without activity, by Sign Out, or when the runtime restarts. Activity is
+  opening a page, writing, acknowledging and saving; watching an open HMI is
+  not, so an unattended HMI signs itself out (or drops to watching, with
+  `--hmi-guest`). When a session ends while someone is working, the page asks
+  them to sign in again and keeps its state (the studio keeps unsaved edits).
 - **Wrong passwords**: after 5 in a row a name is locked for 30 seconds.
 - **Changes apply at once**: a new role, a removed user or a password reset takes
   effect on the user's next request; a reset password ends their other sessions.
@@ -224,9 +240,10 @@ symbol library through `web/shared/symbol-map.json`), trend controls.
 
 ## Known gaps
 
-- **Security**: the studio signs users in (see *Studio users*), but the HMI does
-  not: anyone who reaches the port can write tags and acknowledge alarms. Bind to
-  `127.0.0.1` or a trusted network. No TLS on the HTTP server, so passwords and
+- **Security**: users sign in to the HMI and the studio (see *Users and
+  sign-in*). Bind to `127.0.0.1` or a trusted network all the same. Access is per
+  role, not per screen or tag (Movicon's per-object access levels are not
+  imported). No TLS on the HTTP server, so passwords and
   session cookies cross the network in clear text unless a TLS reverse proxy
   sits in front; behind a proxy on the same machine every request looks local,
   so create the first administrator before exposing it. Pages from other sites cannot

@@ -8,12 +8,14 @@
   .\scripts\run-demo.ps1 -Listen 0.0.0.0:8080      # reachable from tablets on the LAN
   .\scripts\run-demo.ps1 -NoBuild                  # reuse the last release build
   .\scripts\run-demo.ps1 -Fresh                    # start with empty history and alarm journal
+  .\scripts\run-demo.ps1 -HmiGuest                 # the HMI can be watched without signing in
 #>
 [CmdletBinding()]
 param(
     [string]$Listen = "127.0.0.1:8080",
     [switch]$NoBuild,
-    [switch]$Fresh
+    [switch]$Fresh,
+    [switch]$HmiGuest
 )
 
 $ErrorActionPreference = "Stop"
@@ -53,10 +55,12 @@ Write-Host "  Studio  http://${shown}:$port/studio/" -ForegroundColor Green
 Write-Host "  API     http://${shown}:$port/api/diagnostics" -ForegroundColor DarkGray
 Write-Host "  Data    $data" -ForegroundColor DarkGray
 if (-not (Test-Path (Join-Path $data "users.toml"))) {
-    Write-Host "  First studio visit: create the administrator on this machine." -ForegroundColor Yellow
+    Write-Host "  First visit: create the administrator on this machine (HMI or studio)." -ForegroundColor Yellow
 }
 Write-Host "  Ctrl+C stops the runtime." -ForegroundColor DarkGray
 Write-Host ""
 
-& $rt $project --simulate --studio --listen $Listen --web $web --data $data
+$extra = @()
+if ($HmiGuest) { $extra += "--hmi-guest" }
+& $rt $project --simulate --studio --listen $Listen --web $web --data $data @extra
 exit $LASTEXITCODE

@@ -15,11 +15,9 @@
 //! | `PUT /api/studio/alarms` body `[Alarm…]` | `alarms.toml` (removed when empty) |
 //! | `PUT /api/studio/meta` body ProjectMeta | `project.toml` |
 //!
-//! Every route needs a signed-in user (see `auth`): viewers may read the
-//! project, engineers may also save, administrators may also manage users.
-//! Session and user routes: `GET/POST/DELETE /api/studio/session`,
-//! `POST /api/studio/setup`, `PUT /api/studio/password`,
-//! `GET /api/studio/users`, `PUT/DELETE /api/studio/users/{name}`.
+//! Every route needs a signed-in user (`moviclone_auth`; sign-in and user
+//! management are its `/api/auth/…` routes): any role may read the project,
+//! engineers and administrators may save.
 //!
 //! Every body is deserialized into the model types before anything is written,
 //! so a save can never produce a file the runtime refuses to load. Saves answer
@@ -35,16 +33,14 @@
 //! changed since that version, so a studio window holding an old copy cannot
 //! overwrite newer work. Successful saves answer the file's new `"version"`.
 
-pub mod auth;
 mod diag;
 mod files;
 mod names;
 mod screen_files;
-pub mod users;
 pub mod versions;
 
-pub use auth::{Auth, Signed};
-pub use users::Role;
+pub use moviclone_auth::{Auth, Role, Signed};
+use moviclone_auth::AuthError;
 
 pub use diag::{snapshot, DiagnosticJson, Snapshot, LOAD_ERROR_CODE};
 pub use files::write_atomic;
@@ -55,7 +51,7 @@ use axum::body::Bytes;
 use axum::extract::{DefaultBodyLimit, Path as UrlPath, State};
 use axum::http::{HeaderMap, StatusCode};
 use axum::response::{IntoResponse, Response};
-use axum::routing::{get, post, put};
+use axum::routing::{get, put};
 use axum::{Json, Router};
 use moviclone_model::{Alarm, ProjectMeta, Screen, Tag};
 use serde::de::DeserializeOwned;
@@ -77,16 +73,16 @@ struct AppState {
     auth: Arc<Auth>,
 }
 
-impl auth::HasAuth for AppState {
+impl moviclone_auth::HasAuth for AppState {
     fn auth(&self) -> &Arc<Auth> {
         &self.auth
     }
 }
 
-/// The studio API, rooted at `project_dir`, signing users in against `auth`.
+/// The studio API, rooted at `project_dir`; requests are checked against the
+/// sessions of `auth` (mount `moviclone_auth::routes(auth)` for signing in).
 /// `reload_tx` is bumped after every successful save so the runtime can reload
-/// the project. The first-administrator setup needs the client address: serve
-/// with `into_make_service_with_connect_info::<SocketAddr>()`.
+/// the project.
 pub fn routes(project_dir: PathBuf, auth: Arc<Auth>, reload_tx: watch::Sender<u64>) -> Router {
     let state = AppState {
         root: Arc::new(project_dir),
@@ -95,14 +91,6 @@ pub fn routes(project_dir: PathBuf, auth: Arc<Auth>, reload_tx: watch::Sender<u6
         auth,
     };
     Router::new()
-        .route(
-            "/api/studio/session",
-            get(auth::get_session::<AppState>).post(auth::post_session::<AppState>).delete(auth::delete_session::<AppState>),
-        )
-        .route("/api/studio/setup", post(auth::post_setup::<AppState>))
-        .route("/api/studio/password", put(auth::put_password::<AppState>))
-        .route("/api/studio/users", get(auth::get_users::<AppState>))
-        .route("/api/studio/users/:name", put(auth::put_user::<AppState>).delete(auth::delete_user::<AppState>))
         .route("/api/studio/project", get(get_project))
         .route("/api/studio/screens/:name", put(put_screen).delete(delete_screen))
         .route("/api/studio/tags", put(put_tags))
@@ -122,11 +110,11 @@ enum ApiError {
     /// The file changed since the version the client based its edit on.
     Stale { message: String, current: String },
     Internal(String),
-    Auth(auth::AuthError),
+    Auth(AuthError),
 }
 
-impl From<auth::AuthError> for ApiError {
-    fn from(e: auth::AuthError) -> Self {
+impl From<AuthError> for ApiError {
+    fn from(e: AuthError) -> Self {
         ApiError::Auth(e)
     }
 }

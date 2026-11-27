@@ -1,10 +1,10 @@
-//! Studio users: who may sign in, with which role, and their password hashes.
+//! Users: who may sign in to the HMI and the studio, with which role, and
+//! their password hashes.
 //!
 //! Kept in `users.toml` in the runtime's data folder, outside the project
 //! folder, so the list never travels with the project (git, copies, imports)
-//! and the studio cannot overwrite it through a project save. Passwords are
-//! stored only as Argon2id hashes (PHC strings); plain passwords are never
-//! written or logged.
+//! and a studio project save cannot change it. Passwords are stored only as
+//! Argon2id hashes (PHC strings); plain passwords are never written or logged.
 //!
 //! ```toml
 //! [[user]]
@@ -26,20 +26,23 @@ pub const MIN_PASSWORD_LEN: usize = 8;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Role {
-    /// Open the project and look; no saves.
+    /// Watch the HMI (values, trends, alarms) and open the studio read-only.
     Viewer,
-    /// Edit and save screens, tags, alarms and project settings.
+    /// Viewer, plus operating from the HMI: write tags, acknowledge and shelve alarms.
+    Operator,
+    /// Operator, plus editing and saving the project in the studio.
     Engineer,
-    /// Engineer, plus managing studio users.
+    /// Engineer, plus managing users.
     Admin,
 }
 
 impl Role {
-    pub const ALL: [Role; 3] = [Role::Viewer, Role::Engineer, Role::Admin];
+    pub const ALL: [Role; 4] = [Role::Viewer, Role::Operator, Role::Engineer, Role::Admin];
 
     pub fn as_str(self) -> &'static str {
         match self {
             Role::Viewer => "viewer",
+            Role::Operator => "operator",
             Role::Engineer => "engineer",
             Role::Admin => "admin",
         }
@@ -73,8 +76,7 @@ struct UsersFile {
     users: Vec<User>,
 }
 
-const HEADER: &str = "# Moviclone studio users. Passwords are Argon2id hashes, never plain text.\n\
-# Manage them in the studio (Users) or with `movi users`.\n\n";
+const HEADER: &str = "# Moviclone users (HMI and studio). Passwords are Argon2id hashes, never plain text.\n# Manage them in the studio (Users) or with `movi users`.\n\n";
 
 /// The users file of a runtime: `<data>/users.toml`.
 pub fn users_file(data_dir: &Path) -> PathBuf {
@@ -100,7 +102,40 @@ pub fn load(path: &Path) -> Result<Vec<User>, String> {
 /// Writes `users` to `path` atomically.
 pub fn save(path: &Path, users: &[User]) -> Result<(), String> {
     let text = toml::to_string(&UsersFile { users: users.to_vec() }).map_err(|e| format!("cannot write users: {e}"))?;
-    crate::files::write_atomic(path, &format!("{HEADER}{text}")).map_err(|e| format!("cannot write {}: {e}", path.display()))
+    write_atomic(path, &format!("{HEADER}{text}")).map_err(|e| format!("cannot write {}: {e}", path.display()))
+}
+
+/// Writes through a temporary file and a rename, so a crash or a reader never
+/// sees half a users file. Windows refuses the rename for a moment while
+/// another process has the file open, so it is retried briefly.
+fn write_atomic(path: &Path, text: &str) -> std::io::Result<()> {
+    use std::io::Write;
+    let dir = path.parent().ok_or_else(|| std::io::Error::other("file has no parent folder"))?;
+    std::fs::create_dir_all(dir)?;
+    let name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+    let tmp = dir.join(format!(".{name}.{}.tmp", std::process::id()));
+    let result = (|| {
+        let mut f = std::fs::File::create(&tmp)?;
+        f.write_all(text.as_bytes())?;
+        f.sync_all()?;
+        drop(f);
+        let mut last = None;
+        for attempt in 0..8u64 {
+            match std::fs::rename(&tmp, path) {
+                Ok(()) => return Ok(()),
+                Err(e) if e.kind() == std::io::ErrorKind::PermissionDenied => {
+                    last = Some(e);
+                    std::thread::sleep(std::time::Duration::from_millis(15 * (attempt + 1)));
+                }
+                Err(e) => return Err(e),
+            }
+        }
+        Err(last.unwrap_or_else(|| std::io::Error::other("rename failed")))
+    })();
+    if result.is_err() {
+        let _ = std::fs::remove_file(&tmp);
+    }
+    result
 }
 
 /// User names: 1–64 letters, digits, `.`, `_` or `-`. Compared without regard to case.
@@ -170,10 +205,10 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let path = users_file(dir.path());
         assert!(load(&path).unwrap().is_empty());
-        let users = vec![User { name: "alice".into(), role: Role::Admin, password: hash_password("password1").unwrap() }];
+        let users = vec![User { name: "alice".into(), role: Role::Operator, password: hash_password("password1").unwrap() }];
         save(&path, &users).unwrap();
         assert_eq!(load(&path).unwrap(), users);
-        assert!(std::fs::read_to_string(&path).unwrap().contains("role = \"admin\""));
+        assert!(std::fs::read_to_string(&path).unwrap().contains("role = \"operator\""));
     }
 
     #[test]
@@ -193,8 +228,9 @@ mod tests {
             assert!(check_name(bad).is_err(), "{bad:?}");
         }
         assert_eq!(Role::parse(" Engineer "), Some(Role::Engineer));
+        assert_eq!(Role::parse("operator"), Some(Role::Operator));
         assert_eq!(Role::parse("root"), None);
-        assert!(Role::Admin > Role::Engineer && Role::Engineer > Role::Viewer);
+        assert!(Role::Admin > Role::Engineer && Role::Engineer > Role::Operator && Role::Operator > Role::Viewer);
         assert!(check_password("1234567").is_err());
         assert!(check_password("12345678").is_ok());
     }

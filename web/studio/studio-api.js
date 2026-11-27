@@ -50,7 +50,7 @@ export function createStudioApi(base = '', { timeoutMs = 20000, fetchImpl = (...
       }
     }
     const handler = api.onSignedOut ?? onSignedOut;
-    if (res.status === 401 && data?.auth === 'required' && !retried && handler && !path.startsWith('/api/studio/session')) {
+    if (res.status === 401 && data?.auth === 'required' && !retried && handler && !path.startsWith('/api/auth/')) {
       if (await handler()) return request(method, path, body, version, true);
     }
     if (!res.ok || data?.ok === false) throw new StudioApiError(data?.error ?? `${method} ${path}: HTTP ${res.status}`, res.status, data);
@@ -58,16 +58,16 @@ export function createStudioApi(base = '', { timeoutMs = 20000, fetchImpl = (...
   }
   const enc = encodeURIComponent;
   return Object.assign(api, {
-    // Sign-in (docs/PROTOCOL.md, "Studio users").
-    session: () => request('GET', '/api/studio/session'),
-    signIn: (name, password) => request('POST', '/api/studio/session', { name, password }),
-    signOut: () => request('DELETE', '/api/studio/session'),
-    setup: (name, password) => request('POST', '/api/studio/setup', { name, password }),
-    changePassword: (current, next) => request('PUT', '/api/studio/password', { current, new: next }),
-    users: () => request('GET', '/api/studio/users'),
+    // Sign-in and users (docs/PROTOCOL.md, "Sign-in"), shared with the HMI.
+    session: () => request('GET', '/api/auth/session'),
+    signIn: (name, password) => request('POST', '/api/auth/session', { name, password }),
+    signOut: () => request('DELETE', '/api/auth/session'),
+    setup: (name, password) => request('POST', '/api/auth/setup', { name, password }),
+    changePassword: (current, next) => request('PUT', '/api/auth/password', { current, new: next }),
+    users: () => request('GET', '/api/auth/users'),
     /** Creates a user ({role, password}) or changes their role and/or password. */
-    saveUser: (name, change) => request('PUT', `/api/studio/users/${enc(name)}`, change),
-    deleteUser: (name) => request('DELETE', `/api/studio/users/${enc(name)}`),
+    saveUser: (name, change) => request('PUT', `/api/auth/users/${enc(name)}`, change),
+    deleteUser: (name) => request('DELETE', `/api/auth/users/${enc(name)}`),
 
     project: () => request('GET', '/api/studio/project'),
     saveScreen: (screen, version) => request('PUT', `/api/studio/screens/${enc(screen.name)}`, screen, version),

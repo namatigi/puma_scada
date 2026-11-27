@@ -63,8 +63,8 @@ async fn main() -> anyhow::Result<()> {
     let project = args.project.canonicalize().map_err(|e| anyhow::anyhow!("{}: {e}", args.project.display()))?;
 
     let (reload_tx, mut reload_rx) = tokio::sync::watch::channel(0u64);
-    let users = moviclone_studio::users::users_file(&project.join("data"));
-    let auth = moviclone_studio::Auth::open(users).map_err(anyhow::Error::msg)?;
+    let users = moviclone_auth::users::users_file(&project.join("data"));
+    let auth = moviclone_auth::Auth::open(users, false).map_err(anyhow::Error::msg)?;
     tokio::spawn(async move {
         while reload_rx.changed().await.is_ok() {
             tracing::info!(n = *reload_rx.borrow(), "project changed on disk (runtime would reload)");
@@ -87,7 +87,8 @@ async fn main() -> anyhow::Result<()> {
                 }
             }),
         )
-        .merge(moviclone_studio::routes(project.clone(), auth, reload_tx))
+        .merge(moviclone_studio::routes(project.clone(), auth.clone(), reload_tx))
+        .merge(moviclone_auth::routes(auth))
         .nest_service("/studio", ServeDir::new(args.web.join("studio")))
         .nest_service("/shared", ServeDir::new(args.web.join("shared")))
         .nest_service("/hmi", ServeDir::new(args.web.join("hmi")));

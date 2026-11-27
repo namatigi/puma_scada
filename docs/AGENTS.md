@@ -21,7 +21,7 @@ writing code. The architecture rationale is in `docs/movicon-next-architecture.h
 
 | Area | Owner |
 |---|---|
-| `crates/model`, `crates/check`, `crates/import-movicon`, `crates/tagdb`, `crates/movi`, `docs/PROTOCOL.md` | lead (frozen contracts; ask in your final report if you need a change) |
+| `crates/model`, `crates/check`, `crates/import-movicon`, `crates/tagdb`, `crates/movi`, `crates/auth`, `docs/PROTOCOL.md` | lead (frozen contracts; ask in your final report if you need a change) |
 | `crates/driver-modbus`, `crates/sim`, `crates/gateway`, `crates/rt` | runtime agent |
 | `crates/historian`, `crates/alarms` | history agent |
 | `web/shared/**`, `web/hmi/**` | HMI agent |

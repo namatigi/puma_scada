@@ -4,7 +4,7 @@
 //! movi import <movicon project> -o <folder>   convert a Movicon.NExT project
 //! movi build  <folder>                        validate a project and plan polling
 //! movi bundle <folder> -o project.json        the project as one JSON document
-//! movi users  list|add|passwd|role|remove     studio sign-ins (<data>/users.toml)
+//! movi users  list|add|passwd|role|remove     HMI and studio sign-ins (<data>/users.toml)
 //! ```
 
 use anyhow::{bail, Context, Result};
@@ -61,7 +61,7 @@ enum Cmd {
         #[arg(short, long, default_value = "-")]
         out: PathBuf,
     },
-    /// Manage studio users (who may sign in to the studio, and their roles).
+    /// Manage users (who may sign in to the HMI and the studio, and their roles).
     Users {
         /// The runtime's data folder (its --data; default `<project>/data`).
         #[arg(long, default_value = "data", global = true)]
@@ -78,7 +78,7 @@ enum UsersCmd {
     /// Add a user; asks for the password.
     Add {
         name: String,
-        /// viewer, engineer or admin.
+        /// viewer, operator, engineer or admin.
         #[arg(long, default_value = "engineer")]
         role: String,
         /// Read the password from the first line of stdin instead of asking.
@@ -198,7 +198,7 @@ fn build(dir: &Path, show_plan: bool, max_gap: u16, deny_warnings: bool) -> Resu
 // ---------------------------------------------------------------- users
 
 fn read_new_password(from_stdin: bool) -> Result<String> {
-    use moviclone_studio::users::check_password;
+    use moviclone_auth::users::check_password;
     let password = if from_stdin {
         let mut line = String::new();
         std::io::stdin().read_line(&mut line).context("cannot read the password from stdin")?;
@@ -216,15 +216,15 @@ fn read_new_password(from_stdin: bool) -> Result<String> {
 }
 
 fn users_cmd(data: &Path, action: UsersCmd) -> Result<ExitCode> {
-    use moviclone_studio::users::{self, Role, User};
+    use moviclone_auth::users::{self, Role, User};
     let file = users::users_file(data);
     let mut list = users::load(&file).map_err(anyhow::Error::msg)?;
-    let role_of = |r: &str| Role::parse(r).with_context(|| format!("unknown role {r:?} (viewer, engineer or admin)"));
+    let role_of = |r: &str| Role::parse(r).with_context(|| format!("unknown role {r:?} (viewer, operator, engineer or admin)"));
     let find = |list: &[User], name: &str| users::find(list, name).with_context(|| format!("no user {name:?} in {}", file.display()));
     match action {
         UsersCmd::List => {
             if list.is_empty() {
-                println!("no users in {} (the studio offers to create the first administrator on this machine)", file.display());
+                println!("no users in {} (the HMI and the studio offer to create the first administrator on this machine)", file.display());
             }
             for u in &list {
                 println!("{:<24} {}", u.name, u.role);
@@ -244,7 +244,7 @@ fn users_cmd(data: &Path, action: UsersCmd) -> Result<ExitCode> {
         UsersCmd::Passwd { name, password_stdin } => {
             let i = find(&list, &name)?;
             list[i].password = users::hash_password(&read_new_password(password_stdin)?).map_err(anyhow::Error::msg)?;
-            println!("password of {} changed (their open studio sessions stay signed in until the runtime restarts or they sign out)", list[i].name);
+            println!("password of {} changed (their open sessions stay signed in until the runtime restarts or they sign out)", list[i].name);
         }
         UsersCmd::Role { name, role } => {
             let i = find(&list, &name)?;

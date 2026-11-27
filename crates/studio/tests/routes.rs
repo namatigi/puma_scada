@@ -7,7 +7,7 @@ use serde_json::{json, Value};
 use std::fs;
 use std::path::Path;
 use tokio::sync::watch;
-use moviclone_studio::users;
+use moviclone_auth::users;
 use tower::ServiceExt;
 
 const PROJECT: &str = r##"name = "Test plant"
@@ -75,7 +75,7 @@ async fn sign_in(app: &Router, name: &str, password: &str) -> String {
     let body = json!({ "name": name, "password": password }).to_string();
     let req = Request::builder()
         .method(Method::POST)
-        .uri("/api/studio/session")
+        .uri("/api/auth/session")
         .header("content-type", "application/json")
         .body(Body::from(body))
         .expect("request");
@@ -98,9 +98,9 @@ impl Fixture {
         let file = users::users_file(data.path());
         let hash = users::hash_password("engineer-pass").expect("hash");
         users::save(&file, &[users::User { name: "eng".into(), role: users::Role::Engineer, password: hash }]).expect("users");
-        let auth = moviclone_studio::Auth::open(file).expect("auth");
+        let auth = moviclone_studio::Auth::open(file, false).expect("auth");
         let (tx, rx) = watch::channel(0u64);
-        let app = moviclone_studio::routes(root.to_path_buf(), auth, tx);
+        let app = moviclone_studio::routes(root.to_path_buf(), auth.clone(), tx).merge(moviclone_auth::routes(auth));
         let cookie = sign_in(&app, "eng", "engineer-pass").await;
         Self { dir, _data: data, app, reload: rx, cookie }
     }
@@ -554,4 +554,38 @@ async fn stale_delete_and_list_saves_are_refused_unchecked_saves_still_work() {
     let (status, v) = fx.call(Method::PUT, "/api/studio/tags", Some(tags.to_string())).await;
     assert_eq!(status, StatusCode::OK, "{v}");
     assert!(v["version"].is_string());
+}
+
+#[tokio::test]
+async fn reading_needs_a_session_and_saving_needs_an_engineer() {
+    let fx = Fixture::new().await;
+    let req = |cookie: Option<&str>, method: Method, uri: &str, body: Option<String>| {
+        let mut r = Request::builder().method(method).uri(uri);
+        if let Some(c) = cookie {
+            r = r.header("cookie", c);
+        }
+        if body.is_some() {
+            r = r.header("content-type", "application/json");
+        }
+        r.body(body.map(Body::from).unwrap_or_else(Body::empty)).expect("request")
+    };
+    let res = fx.app.clone().oneshot(req(None, Method::GET, "/api/studio/project", None)).await.unwrap();
+    assert_eq!(res.status(), StatusCode::UNAUTHORIZED);
+
+    // An operator may look at the project but not save it.
+    let users_file = users::users_file(fx._data.path());
+    let mut list = users::load(&users_file).unwrap();
+    list.push(users::User { name: "op".into(), role: users::Role::Operator, password: users::hash_password("operator-pass").unwrap() });
+    users::save(&users_file, &list).unwrap();
+    let op = sign_in(&fx.app, "op", "operator-pass").await;
+    let res = fx.app.clone().oneshot(req(Some(&op), Method::GET, "/api/studio/project", None)).await.unwrap();
+    assert_eq!(res.status(), StatusCode::OK);
+    let tags = json!([{ "name": "Flow", "type": "f32" }]).to_string();
+    let res = fx.app.clone().oneshot(req(Some(&op), Method::PUT, "/api/studio/tags", Some(tags.clone()))).await.unwrap();
+    assert_eq!(res.status(), StatusCode::FORBIDDEN);
+    let res = fx.app.clone().oneshot(req(Some(&op), Method::DELETE, "/api/studio/screens/Popup", None)).await.unwrap();
+    assert_eq!(res.status(), StatusCode::FORBIDDEN);
+    assert!(fx.root().join("screens/Popup.toml").exists());
+    let (status, _) = fx.call(Method::PUT, "/api/studio/tags", Some(tags)).await;
+    assert_eq!(status, StatusCode::OK, "the engineer may");
 }

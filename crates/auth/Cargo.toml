@@ -1,0 +1,20 @@
+[package]
+name = "moviclone-auth"
+description = "Users, roles and sign-in sessions shared by the HMI and the studio"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+tokio.workspace = true
+axum.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+toml.workspace = true
+tracing.workspace = true
+argon2 = { version = "0.5", features = ["std"] }
+getrandom = "0.2"
+
+[dev-dependencies]
+tower = { version = "0.5", features = ["util"] }
+tempfile = "3"

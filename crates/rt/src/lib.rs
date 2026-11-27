@@ -54,6 +54,10 @@ pub struct Args {
     /// Mount the studio API (/api/studio/…); saves are applied to the running project.
     #[arg(long)]
     pub studio: bool,
+    /// Let anyone who reaches the HMI watch it without signing in (wall
+    /// displays); writes and alarm actions still need an operator.
+    #[arg(long)]
+    pub hmi_guest: bool,
 }
 
 impl Args {
@@ -67,6 +71,7 @@ impl Args {
             data: None,
             allow_errors: false,
             studio: false,
+            hmi_guest: false,
         }
     }
 

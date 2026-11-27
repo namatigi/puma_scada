@@ -16,6 +16,9 @@ import { timeStep, compactPoints } from './trend.js';
 import { ackPlan, shownAlarms } from './alarmlist.js';
 import { writeTimeoutFor } from './client.js';
 import { screenFromHash } from '../hmi/hash.js';
+import { roleAtLeast, ROLES } from './signin.js';
+import { setAccess, canOperate, mayOperate } from './access.js';
+import { createHttpApi } from './api.js';
 
 const results = [];
 let group = '';
@@ -420,6 +423,46 @@ check('malformed URL hashes do not throw', () => {
   eq(screenFromHash('#100%'), '100%');
   eq(screenFromHash('#%E0'), '%E0');
   eq(screenFromHash(''), '');
+});
+
+group = 'sign-in';
+check('roles include the ones below', () => {
+  eq(ROLES, ['viewer', 'operator', 'engineer', 'admin']);
+  eq([roleAtLeast('viewer', 'operator'), roleAtLeast('operator', 'operator'), roleAtLeast('admin', 'operator')], [false, true, true]);
+  eq([roleAtLeast(undefined, 'viewer'), roleAtLeast('operator', 'nonsense')], [false, false]);
+});
+check('the access gate tells the user once and refuses', () => {
+  const denied = [];
+  let allowed = false;
+  setAccess({ canOperate: () => allowed, onDenied: (what) => denied.push(what) });
+  eq([canOperate(), mayOperate('write Flow')], [false, false]);
+  allowed = true;
+  eq(mayOperate('write Flow'), true);
+  eq(denied, ['write Flow']);
+  setAccess({ canOperate: () => true, onDenied: () => {} });
+});
+await checkAsync('a request refused for an ended session signs in again and is sent once more', async () => {
+  const realFetch = window.fetch;
+  let signedIn = false;
+  const calls = [];
+  window.fetch = async (url, init) => {
+    calls.push(`${init.method} ${url}`);
+    const body = signedIn ? { ok: true } : { ok: false, auth: 'required', error: 'sign in first' };
+    return new Response(JSON.stringify(body), { status: signedIn ? 200 : 401 });
+  };
+  try {
+    let asked = 0;
+    const api = createHttpApi('', { onSignedOut: async () => { asked += 1; signedIn = true; return true; } });
+    eq((await api.write('Flow', 1)).ok, true);
+    eq([asked, calls], [1, ['POST /api/write', 'POST /api/write']]);
+    signedIn = false;
+    const declined = createHttpApi('', { onSignedOut: async () => false });
+    let err = null;
+    try { await declined.ackAll(); } catch (e) { err = e; }
+    eq(err?.status, 401);
+  } finally {
+    window.fetch = realFetch;
+  }
 });
 
 // ---------------------------------------------------------------- report

@@ -753,10 +753,10 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "clap",
+ "moviclone-auth",
  "moviclone-check",
  "moviclone-import-movicon",
  "moviclone-model",
- "moviclone-studio",
  "rpassword",
  "serde_json",
 ]
@@ -768,11 +768,28 @@ dependencies = [
  "anyhow",
  "axum",
  "http-body-util",
+ "moviclone-auth",
  "moviclone-model",
  "moviclone-tagdb",
  "serde",
  "serde_json",
  "tokio",
+ "tower",
+ "tracing",
+]
+
+[[package]]
+name = "moviclone-auth"
+version = "0.1.0"
+dependencies = [
+ "argon2",
+ "axum",
+ "getrandom 0.2.17",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "tokio",
+ "toml",
  "tower",
  "tracing",
 ]
@@ -807,6 +824,7 @@ dependencies = [
  "anyhow",
  "axum",
  "futures-util",
+ "moviclone-auth",
  "moviclone-model",
  "moviclone-tagdb",
  "percent-encoding",
@@ -865,6 +883,7 @@ dependencies = [
  "clap",
  "futures-util",
  "moviclone-alarms",
+ "moviclone-auth",
  "moviclone-check",
  "moviclone-driver-modbus",
  "moviclone-gateway",
@@ -900,9 +919,8 @@ name = "moviclone-studio"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "argon2",
  "axum",
- "getrandom 0.2.17",
+ "moviclone-auth",
  "moviclone-check",
  "moviclone-model",
  "serde",

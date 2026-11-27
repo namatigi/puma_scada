@@ -4,12 +4,16 @@
 //!
 //! Each test runs on its own copy of `demo/oxoafrica` with one extra alarm,
 //! `Test_Start` (`FM_01_START` is true), that the tests can raise on demand.
+//! Sign-in is always on: each rig creates the first administrator (allowed
+//! over loopback) and the helpers send that session unless told otherwise.
 
 use futures_util::{SinkExt, StreamExt};
 use moviclone_rt::{Args, Runtime};
 use serde_json::{json, Value as Json};
+use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::path::{Path, PathBuf};
+use std::sync::Mutex;
 use std::time::Duration;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio_tungstenite::tungstenite::Message;
@@ -23,6 +27,13 @@ severity = "low"
 message = "FM_01 totalizer running (test alarm)"
 area = "Test"
 "#;
+
+/// The administrator's session cookie of each running rig, by address.
+static SESSIONS: Mutex<Option<HashMap<SocketAddr, String>>> = Mutex::new(None);
+
+fn session_of(addr: SocketAddr) -> Option<String> {
+    SESSIONS.lock().unwrap().as_ref().and_then(|m| m.get(&addr).cloned())
+}
 
 fn repo() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
@@ -74,6 +85,10 @@ impl Rig {
         args.data = Some(dir.path().join("data"));
         let rt = moviclone_rt::start(args).await.expect("runtime starts");
         let addr = rt.local_addr();
+        let r = http_as(addr, None, "POST", "/api/auth/setup", Some(&json!({ "name": "admin", "password": "e2e-admin-pass" }))).await;
+        assert_eq!(r.status, 200, "first administrator: {}", r.body);
+        let cookie = r.cookie().expect("session cookie");
+        SESSIONS.lock().unwrap().get_or_insert_with(HashMap::new).insert(addr, cookie);
         Rig { rt: Some(rt), addr, dir }
     }
 
@@ -107,11 +122,12 @@ impl Reply {
 }
 
 /// Minimal HTTP/1.1 client (no extra dependencies), with chunked decoding.
+/// A request as the rig's administrator.
 async fn http(addr: SocketAddr, method: &str, path: &str, body: Option<&Json>) -> Reply {
-    http_as(addr, None, method, path, body).await
+    http_as(addr, session_of(addr).as_deref(), method, path, body).await
 }
 
-/// `http` with a session cookie (studio routes).
+/// A request with the given session cookie (`None`: not signed in).
 async fn http_as(addr: SocketAddr, cookie: Option<&str>, method: &str, path: &str, body: Option<&Json>) -> Reply {
     let body = body.map(|b| b.to_string()).unwrap_or_default();
     let mut sock = tokio::net::TcpStream::connect(addr).await.unwrap();
@@ -169,8 +185,18 @@ where
 
 type Ws = tokio_tungstenite::WebSocketStream<tokio_tungstenite::MaybeTlsStream<tokio::net::TcpStream>>;
 
+/// A WebSocket as the rig's administrator.
 async fn connect(addr: SocketAddr) -> Ws {
-    tokio_tungstenite::connect_async(format!("ws://{addr}/ws")).await.expect("websocket connects").0
+    connect_as(addr, session_of(addr).as_deref()).await.expect("websocket connects")
+}
+
+async fn connect_as(addr: SocketAddr, cookie: Option<&str>) -> Result<Ws, tokio_tungstenite::tungstenite::Error> {
+    use tokio_tungstenite::tungstenite::client::IntoClientRequest;
+    let mut req = format!("ws://{addr}/ws").into_client_request()?;
+    if let Some(c) = cookie {
+        req.headers_mut().insert("cookie", c.parse().expect("cookie header"));
+    }
+    Ok(tokio_tungstenite::connect_async(req).await?.0)
 }
 
 async fn send(ws: &mut Ws, msg: Json) {
@@ -332,7 +358,8 @@ async fn alarm_activates_and_is_acknowledged() {
     assert_eq!(listed["state"], "active-unacked");
     assert_eq!(listed["severity"], "low");
 
-    let r = http(addr, "POST", "/api/alarms/Test_Start/ack", Some(&json!({"user": "e2e"}))).await;
+    // The journal names the signed-in user, not a `user` the client claims.
+    let r = http(addr, "POST", "/api/alarms/Test_Start/ack", Some(&json!({"user": "someone-else"}))).await;
     assert_eq!((r.status, r.json()["ok"].clone()), (200, json!(true)), "{}", r.body);
     recv_until(&mut ws, 30, "Test_Start acknowledged", |m| {
         m["type"] == "alarms" && find(m).is_some_and(|a| a["state"] == "active-acked")
@@ -347,6 +374,8 @@ async fn alarm_activates_and_is_acknowledged() {
         .map(|e| e["event"].as_str().unwrap_or_default().to_string())
         .collect();
     assert!(events.contains(&"activated".into()) && events.contains(&"acked".into()), "{events:?}");
+    let acked = journal["events"].as_array().unwrap().iter().find(|e| e["name"] == "Test_Start" && e["event"] == "acked").unwrap();
+    assert_eq!(acked["user"], "admin");
     assert_eq!(http(addr, "POST", "/api/alarms/Nope/ack", None).await.status, 404);
 
     // The journal is on disk in the data folder.
@@ -361,12 +390,9 @@ async fn studio_saves_reload_the_running_project() {
     let mut ws = connect(addr).await;
     wait_good(&mut ws, &["FM_01_MassFlow"]).await;
 
-    // The studio needs a signed-in user. With no users yet, the first
-    // administrator can be created from this machine (the test connects over loopback).
-    assert_eq!(http(addr, "GET", "/api/studio/project", None).await.status, 401);
-    let r = http(addr, "POST", "/api/studio/setup", Some(&json!({ "name": "admin", "password": "e2e-admin-pass" }))).await;
-    assert_eq!(r.status, 200, "{}", r.body);
-    let cookie = r.cookie().expect("session cookie");
+    // The studio needs a signed-in user (the rig's administrator).
+    assert_eq!(http_as(addr, None, "GET", "/api/studio/project", None).await.status, 401);
+    let cookie = session_of(addr).expect("signed in");
     let me = Some(cookie.as_str());
     assert!(rig.dir.path().join("data/users.toml").exists());
 
@@ -426,5 +452,60 @@ async fn studio_saves_reload_the_running_project() {
     let bundle = get(addr, "/api/bundle").await;
     let manifold = bundle["screens"].as_array().unwrap().iter().find(|s| s["name"] == "Manifold").unwrap().clone();
     assert!(manifold["element"].as_array().unwrap().len() > 1, "a project with errors must not replace the running one");
+    rig.stop().await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn the_hmi_needs_a_user_and_operators_operate() {
+    let rig = Rig::start().await;
+    let addr = rig.addr;
+
+    // Nothing but the pages and the sign-in answers without a session.
+    assert_eq!(http_as(addr, None, "GET", "/hmi/", None).await.status, 200);
+    assert_eq!(http_as(addr, None, "GET", "/api/auth/session", None).await.status, 200);
+    for path in ["/api/values", "/api/bundle", "/api/alarms", "/api/diagnostics"] {
+        assert_eq!(http_as(addr, None, "GET", path, None).await.status, 401, "{path}");
+    }
+    let write = json!({"tag": "FM_01_START", "value": true});
+    assert_eq!(http_as(addr, None, "POST", "/api/write", Some(&write)).await.status, 401);
+    assert!(connect_as(addr, None).await.is_err(), "the WebSocket needs a session");
+
+    // A viewer watches; an operator also writes and acknowledges.
+    for (name, role) in [("vic", "viewer"), ("ola", "operator")] {
+        let r = http(addr, "PUT", &format!("/api/auth/users/{name}"), Some(&json!({ "role": role, "password": "e2e-user-pass" }))).await;
+        assert_eq!(r.status, 200, "{}", r.body);
+    }
+    let sign_in = |name: &'static str| async move {
+        let r = http_as(addr, None, "POST", "/api/auth/session", Some(&json!({ "name": name, "password": "e2e-user-pass" }))).await;
+        assert_eq!(r.status, 200, "{}", r.body);
+        r.cookie().expect("cookie")
+    };
+    let viewer = sign_in("vic").await;
+    let operator = sign_in("ola").await;
+
+    assert_eq!(http_as(addr, Some(&viewer), "GET", "/api/values", None).await.status, 200);
+    let r = http_as(addr, Some(&viewer), "POST", "/api/write", Some(&write)).await;
+    assert_eq!((r.status, r.json()["auth"].clone()), (403, json!("forbidden")));
+    assert_eq!(http_as(addr, Some(&viewer), "POST", "/api/alarms/ack-all", None).await.status, 403);
+    let mut ws = connect_as(addr, Some(&viewer)).await.expect("viewer websocket");
+    wait_good(&mut ws, &["FM_01_START"]).await;
+    send(&mut ws, json!({"op": "write", "id": 1, "tag": "FM_01_START", "value": true})).await;
+    let reply = recv_until(&mut ws, 10, "the viewer's write is refused", |m| m["type"] == "write-result").await;
+    assert_eq!(reply["ok"], false);
+    assert!(reply["error"].as_str().unwrap().contains("operator"), "{reply}");
+
+    assert_eq!(http_as(addr, Some(&operator), "POST", "/api/write", Some(&write)).await.status, 200);
+    let mut ws = connect_as(addr, Some(&operator)).await.expect("operator websocket");
+    wait_good(&mut ws, &["FM_01_START"]).await;
+    send(&mut ws, json!({"op": "write", "id": 2, "tag": "FM_01_START", "value": true})).await;
+    let reply = recv_until(&mut ws, 10, "the operator's write", |m| m["type"] == "write-result").await;
+    assert_eq!(reply["ok"], true, "{reply}");
+
+    // Signing out ends what the session could do.
+    assert_eq!(http_as(addr, Some(&operator), "DELETE", "/api/auth/session", None).await.status, 200);
+    assert_eq!(http_as(addr, Some(&operator), "POST", "/api/write", Some(&write)).await.status, 401);
+    send(&mut ws, json!({"op": "write", "id": 3, "tag": "FM_01_START", "value": true})).await;
+    let reply = recv_until(&mut ws, 10, "a write after signing out", |m| m["type"] == "write-result").await;
+    assert_eq!(reply["ok"], false);
     rig.stop().await;
 }

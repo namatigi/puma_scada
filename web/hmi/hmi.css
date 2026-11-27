@@ -165,3 +165,21 @@ button { font-family: inherit; }
   .hmi-page { padding: 12px; }
   .hmi-tabs { margin-left: 0; }
 }
+
+/* Signed-in user (top bar) */
+.hmi-user { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 10px; border: 1px solid transparent; border-radius: 17px; background: transparent; color: var(--mc-text); font: 600 13px var(--mc-font); cursor: pointer; white-space: nowrap; }
+.hmi-user:hover, .hmi-user:focus-visible { background: var(--mc-raised); border-color: var(--mc-border); outline: none; }
+.hmi-user .hmi-icon { width: 18px; height: 18px; }
+.hmi-user-role { padding: 1px 7px; border-radius: 9px; font-size: 11px; font-weight: 600; background: var(--mc-raised); color: var(--mc-text-dim); }
+.hmi-user-role[data-role='operator'] { background: rgba(53, 196, 106, 0.18); color: #7fe0a3; }
+.hmi-user-role[data-role='engineer'], .hmi-user-role[data-role='admin'] { background: rgba(61, 139, 253, 0.22); color: #9cc3ff; }
+.hmi-user-role[data-role='viewer'], .hmi-user-role[data-role='guest'] { background: rgba(255, 176, 0, 0.16); color: #ffd27a; }
+.hmi-user.hmi-guest { border-color: var(--mc-accent); }
+.hmi-user-menu { position: fixed; z-index: 300; min-width: 220px; padding: 6px; display: flex; flex-direction: column; gap: 2px; background: var(--mc-panel-2); border: 1px solid var(--mc-border-strong); border-radius: var(--mc-radius); box-shadow: var(--mc-shadow); }
+.hmi-user-menu-head { display: flex; justify-content: space-between; gap: 12px; padding: 6px 10px 8px; border-bottom: 1px solid var(--mc-border); margin-bottom: 4px; color: var(--mc-text-dim); }
+.hmi-user-menu-head b { color: var(--mc-text); }
+.hmi-user-menu button { min-height: 38px; padding: 0 10px; text-align: left; border: 0; border-radius: 4px; background: transparent; color: var(--mc-text); font: 14px var(--mc-font); cursor: pointer; }
+.hmi-user-menu button:hover, .hmi-user-menu button:focus-visible { background: var(--mc-raised); outline: none; }
+/* Viewers and guests: entry fields show they are locked. */
+.hmi-view-only .mc-editable { cursor: not-allowed; }
+@media (max-width: 720px) { .hmi-user-name { display: none; } }
