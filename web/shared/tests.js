@@ -9,7 +9,7 @@ import { SYMBOLS, drawSymbol, parseSymbolRef, symbolState, listSymbols } from '.
 import { resolveSymbol, normaliseSymbolMap, loadSymbolMap } from './symbolmap.js';
 import { cssBackgroundToSvg, parseColor, mix } from './svg.js';
 import { backoffDelay, createWsClient } from './client.js';
-import { isPopupScreen, screenTags, createScreenView } from './renderer.js';
+import { isPopupScreen, screenTags, createScreenView, pipeFlow } from './renderer.js';
 import { sortRows, toCsv, rowsToObjects } from './historytable.js';
 import { alarmSummary, sortAlarms } from './alarmlist.js';
 import { timeStep, compactPoints } from './trend.js';
@@ -180,6 +180,17 @@ await checkAsync('symbol-map.json maps every Petrogas symbol to a library symbol
   for (const [key, entry] of Object.entries(map.instances)) {
     ok(SYMBOLS[entry.symbol ?? 'coriolis-meter'], `instance ${key} names an unknown symbol`);
   }
+});
+check('pipe flow: threshold, direction, quality', () => {
+  eq(pipeFlow({ v: 50, q: 'good' }, 1), { active: true, reverse: false });
+  eq(pipeFlow({ v: 0.4, q: 'good' }, 1), { active: false, reverse: false }, 'standstill noise below the threshold');
+  eq(pipeFlow({ v: 50, q: 'good' }, 1, true), { active: true, reverse: true });
+  eq(pipeFlow({ v: -50, q: 'good' }, 1), { active: true, reverse: true }, 'negative flow runs backwards');
+  eq(pipeFlow({ v: -50, q: 'good' }, 1, true), { active: true, reverse: false });
+  eq(pipeFlow({ v: 50, q: 'bad' }, 1), { active: false, reverse: false }, 'bad quality never animates');
+  eq(pipeFlow({ v: true, q: 'good' }), { active: true, reverse: false });
+  eq(pipeFlow({ v: false, q: 'good' }), { active: false, reverse: false });
+  eq(pipeFlow(undefined), { active: false, reverse: false });
 });
 await checkAsync('meter product colours per instance', async () => {
   const map = await loadSymbolMap();

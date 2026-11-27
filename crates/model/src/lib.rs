@@ -521,9 +521,22 @@ pub enum ElementKind {
         fill: Option<String>,
         #[serde(default, skip_serializing_if = "Option::is_none")]
         stroke: Option<String>,
-        /// Tag that animates the pipe (flow / colour).
+        /// Tag that animates the pipe: while it is flowing (see `flow_min`)
+        /// dashes move along the pipe.
         #[serde(default, skip_serializing_if = "Option::is_none")]
         tag: Option<String>,
+        /// Colour of the moving dashes, usually the product's colour
+        /// (Gasoline `#FF4D4D`, Jet A-1 `#F4F4F4`, ...). Default: the theme's flow colour.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        flow_color: Option<String>,
+        /// The pipe counts as flowing when the tag is above this value (for
+        /// example 1 mTon/hr, so meter noise at standstill does not animate).
+        /// Default: any non-zero / true value.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        flow_min: Option<f64>,
+        /// Product moves against the order of `points` (positive tag values).
+        #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+        flow_reverse: bool,
     },
     /// Graphic from a symbol library. `symbol` names a library entry; imported
     /// Movicon symbols keep their original name as `movicon:<SymbolName>` until

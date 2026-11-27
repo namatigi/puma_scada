@@ -161,6 +161,9 @@ fn project_round_trips_through_files() {
             fill: Some("#EFEFF0".into()),
             stroke: None,
             tag: None,
+            flow_color: Some("#FF4D4D".into()),
+            flow_min: Some(1.0),
+            flow_reverse: true,
         },
         x: 1017.0,
         y: 160.0,
@@ -220,4 +223,39 @@ fn alarms_round_trip_through_files() {
     let (back, _) = load_project(&dir).unwrap();
     std::fs::remove_dir_all(&dir).unwrap();
     assert_eq!(back, p);
+}
+
+fn pipe(tag: Option<&str>, flow_color: Option<&str>, flow_min: Option<f64>) -> Element {
+    Element {
+        id: "p1".into(),
+        kind: ElementKind::Pipeline {
+            points: vec![[0.0, 0.0], [100.0, 0.0]],
+            thickness: 26.0,
+            fill: None,
+            stroke: None,
+            tag: tag.map(Into::into),
+            flow_color: flow_color.map(Into::into),
+            flow_min,
+            flow_reverse: false,
+        },
+        x: 10.0,
+        y: 100.0,
+        w: 100.0,
+        h: 26.0,
+        rotation: 0.0,
+        on_click: vec![],
+    }
+}
+
+#[test]
+fn pipeline_flow_settings_are_checked() {
+    let with = |e: Element| {
+        let mut p = base();
+        p.screens[0].elements.push(e);
+        codes(&p)
+    };
+    assert!(!with(pipe(Some("Flow"), Some("#FF4D4D"), Some(1.0))).iter().any(|c| c.starts_with("W038") || c.starts_with("E038")));
+    assert!(with(pipe(None, Some("#FF4D4D"), None)).contains(&"W038"), "colour without a tag never animates");
+    assert!(with(pipe(Some("Missing"), None, None)).contains(&"E034"));
+    assert!(with(pipe(Some("Flow"), None, Some(f64::NAN))).contains(&"E038"));
 }

@@ -21,7 +21,7 @@ export const ELEMENT_KINDS = [
 export const KIND_INFO = Object.fromEntries(ELEMENT_KINDS.map((k) => [k.kind, k]));
 
 /** Optional fields per kind: removed instead of saved as "" or null. */
-const OPTIONAL = new Set(['tag', 'unit', 'format', 'fill', 'stroke', 'symbol', 'historian', 'area', 'output_dir']);
+const OPTIONAL = new Set(['tag', 'unit', 'format', 'fill', 'stroke', 'symbol', 'historian', 'area', 'output_dir', 'flow_color', 'flow_min', 'flow_reverse']);
 
 /** A new element of `kind`, centred on (cx, cy) in screen units. */
 export function newElement(kind, project, variant = null) {

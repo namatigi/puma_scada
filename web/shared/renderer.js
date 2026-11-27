@@ -82,6 +82,18 @@ export function estimateTextWidth(text, size, bold = false) {
  * @param {number} [opts.staleMs] age after which a value is shown as stale
  * @param {object|Map} [opts.values] initial values
  */
+/**
+ * Whether a pipe animates for `sample` and which way. Numbers flow when their
+ * size is above `min` (negative values flow backwards); bools when true.
+ * Bad quality never animates: a stale value must not look like product moving.
+ */
+export function pipeFlow(sample, min = 0, reversed = false) {
+  if (!sample || sample.q === 'bad') return { active: false, reverse: false };
+  const n = toNumber(sample.v);
+  const active = typeof sample.v === 'number' ? Math.abs(n) > min : truthy(sample.v);
+  return { active, reverse: active && (reversed !== (n !== null && n < 0)) };
+}
+
 export function createScreenView(container, screen, opts = {}) {
   const mode = opts.mode ?? 'runtime';
   const runtime = mode === 'runtime';
@@ -391,21 +403,23 @@ export function createScreenView(container, screen, opts = {}) {
       if (diff < 0.12 && segLen > t * 0.6) g.appendChild(collar(pts[i][0], pts[i][1], (a1 * 180) / Math.PI, t * 1.1, Math.max(3, t * 0.16), colours));
     }
     if (el.tag) {
-      const flow = s('path', {
-        class: 'mc-flow', d, fill: 'none', 'stroke-width': Math.max(2, t * 0.3), 'stroke-linecap': 'round',
-        'stroke-dasharray': `${(t * 0.55).toFixed(1)} ${(t * 1.1).toFixed(1)}`,
-        style: `--mc-flow-len:${(t * 1.65).toFixed(1)}px`,
-      });
+      // Moving dashes in the product's colour over a darker edge, so even a
+      // white product (Jet A-1) shows on the light steel pipe.
+      const dash = { d, fill: 'none', 'stroke-linecap': 'round', 'stroke-dasharray': `${(t * 0.55).toFixed(1)} ${(t * 1.1).toFixed(1)}`, style: `--mc-flow-len:${(t * 1.65).toFixed(1)}px` };
+      const core = Math.max(2, t * 0.3);
+      g.appendChild(s('path', { ...dash, class: 'mc-flow mc-flow-edge', 'stroke-width': core + Math.max(2, t * 0.12) }));
+      const flow = s('path', { ...dash, class: 'mc-flow', 'stroke-width': core });
+      if (el.flow_color) flow.style.stroke = el.flow_color;
       g.appendChild(flow);
       const title = s('title', {}, el.tag);
       g.appendChild(title);
+      const min = Number.isFinite(el.flow_min) ? el.flow_min : 0;
       updaters.push((vals) => {
         if (!vals.has(el.tag)) return;
         const sample = vals.get(el.tag);
-        const n = toNumber(sample?.v);
-        const active = sample?.q !== 'bad' && truthy(sample?.v);
+        const { active, reverse } = pipeFlow(sample, min, el.flow_reverse === true);
         g.classList.toggle('mc-flowing', active);
-        g.classList.toggle('mc-flow-reverse', active && n !== null && n < 0);
+        g.classList.toggle('mc-flow-reverse', active && reverse);
         g.classList.toggle('mc-q-bad', sample?.q === 'bad');
         title.textContent = `${el.tag}: ${formatValue(sample?.v)}${active ? ' (flowing)' : ''}`;
       });

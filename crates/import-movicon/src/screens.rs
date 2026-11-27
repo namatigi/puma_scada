@@ -304,6 +304,9 @@ fn import_screen(
                     fill: node.attribute("Fill").and_then(css_color),
                     stroke: node.attribute("Stroke").and_then(css_color),
                     tag: binder.by_ref(ctl_ref, &context, rep),
+                    flow_color: None,
+                    flow_min: None,
+                    flow_reverse: false,
                 }
             }
             (_, Some("EditDisplay" | "Display")) => ElementKind::Display {

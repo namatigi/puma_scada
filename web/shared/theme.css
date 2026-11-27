@@ -105,6 +105,7 @@
 
 /* Pipes */
 .mc-flow { stroke: var(--mc-flow); opacity: 0; transition: opacity 0.4s; pointer-events: none; }
+.mc-flow-edge { stroke: rgba(20, 22, 26, 0.55); }
 .mc-flowing .mc-flow { opacity: 0.85; animation: mc-flow 0.9s linear infinite; }
 .mc-flow-reverse .mc-flow { animation-direction: reverse; }
 @keyframes mc-flow { from { stroke-dashoffset: var(--mc-flow-len, 40px); } to { stroke-dashoffset: 0; } }

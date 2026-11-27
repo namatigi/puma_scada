@@ -27,6 +27,9 @@ const FIELDS = {
   stroke: ['pipeline'],
   thickness: ['pipeline'],
   points: ['pipeline'],
+  flow_color: ['pipeline'],
+  flow_min: ['pipeline'],
+  flow_reverse: ['pipeline'],
 };
 
 const has = (kinds, key) => kinds.every((k) => FIELDS[key].includes(k));
@@ -84,6 +87,11 @@ export function screenTarget(ctx) {
         : 'Tag that animates the object (pipeline flow, symbol state).',
       onChange: set('tag', 'tag', (v) => v.trim()),
     });
+  }
+  if (has(kinds, 'flow_color')) {
+    push({ key: 'flow_color', label: 'Flow colour', cat: 'Animations', type: 'colour', ...val('flow_color'), placeholder: '#7FD0FF', desc: 'Colour of the moving dashes while the pipe flows: the product colour (Gasoline #FF4D4D, Jet A-1 #F4F4F4, Gasoil #555555, HFO #151515).', onChange: set('flow_color', 'flow colour') });
+    push({ key: 'flow_min', label: 'Flowing above', cat: 'Animations', type: 'number', ...val('flow_min'), placeholder: '0', desc: 'The pipe animates while the tag is above this value (for example 1 mTon/hr, so a meter at standstill does not animate). Blank: any non-zero value.', onChange: set('flow_min', 'flow threshold', (v) => (v === '' || v === null || Number.isNaN(v) ? undefined : v)) });
+    push({ key: 'flow_reverse', label: 'Reverse direction', cat: 'Animations', type: 'bool', ...val('flow_reverse'), desc: 'Product moves against the drawing direction of the points (first point to last).', onChange: set('flow_reverse', 'flow direction', (v) => (v ? true : undefined)) });
   }
   if (has(kinds, 'tags') && one) {
     push({ key: 'tags', label: 'Pens', cat: 'Tag', type: 'custom', wide: true, desc: 'Tags drawn as pens, in legend order.', render: () => pensEditor(ctx, one) });
@@ -186,7 +194,7 @@ function popupHint(project, scr) {
 
 export function animationOf(el) {
   if (el.kind === 'display') return el.tag ? `Value ← ${el.tag}` : 'none (no tag)';
-  if (el.kind === 'pipeline') return el.tag ? `Flow ← ${el.tag}` : 'none';
+  if (el.kind === 'pipeline') return el.tag ? `Flow ← ${el.tag}${Number.isFinite(el.flow_min) ? ` > ${el.flow_min}` : ''}${el.flow_color ? ` (${el.flow_color})` : ''}` : 'none';
   if (el.kind === 'symbol') return el.tag ? `State ← ${el.tag}` : 'static';
   if (el.kind === 'trend') return `${(el.tags ?? []).length} pen(s)`;
   return 'none';

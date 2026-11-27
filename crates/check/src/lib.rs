@@ -261,8 +261,24 @@ fn check_screens(cx: &mut Ctx) {
                     Some(t) if *editable && !t.access.writes() => editable_read_only.push(e.id.as_str()),
                     _ => {}
                 },
-                ElementKind::Pipeline { tag: Some(tag), .. } if p.tag(tag).is_none() => {
-                    cx.push(Severity::Error, "E034", file.clone(), item.clone(), format!("tag {tag:?} does not exist"));
+                ElementKind::Pipeline { tag, flow_color, flow_min, .. } => {
+                    match tag.as_deref().map(|t| (t, p.tag(t))) {
+                        Some((t, None)) => {
+                            cx.push(Severity::Error, "E034", file.clone(), item.clone(), format!("tag {t:?} does not exist"));
+                        }
+                        Some((t, Some(def))) if def.data_type == DataType::String => {
+                            cx.push(Severity::Warning, "W038", file.clone(), item.clone(),
+                                format!("flow tag {t:?} is text; a pipe animates from a number or a bool"));
+                        }
+                        None if flow_color.is_some() || flow_min.is_some() => {
+                            cx.push(Severity::Warning, "W038", file.clone(), item.clone(),
+                                "flow colour or threshold is set but the pipe has no tag, so it never animates".into());
+                        }
+                        _ => {}
+                    }
+                    if flow_min.is_some_and(|m| !m.is_finite()) {
+                        cx.push(Severity::Error, "E038", file.clone(), item.clone(), "flow threshold is not a number".into());
+                    }
                 }
                 ElementKind::Symbol { symbol, tag } => {
                     if !symbol.as_deref().is_some_and(|s| !s.starts_with("movicon:")) {
