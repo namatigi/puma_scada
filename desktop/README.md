@@ -15,6 +15,8 @@ started.
   out (see `demo/site-template.toml`). The project then opens in the studio.
   *Skip for now* goes to the launcher; *Set Up a Depot…* (launcher or Project
   menu) runs the setup again for another depot.
+  ![Step 1: the depot name](../docs/screenshots/desktop-setup-depot.png)
+  ![Step 2: the meters at the depot](../docs/screenshots/desktop-setup-meters.png)
 - **Launcher**: recent projects, *Set Up a Depot…*, *Open Project…*, *New
   Blank Project…* (an empty folder; one blank 1920×1080 screen), *Import
   Movicon.NExT…* (a `.UFProject` into an empty folder, with `IMPORT-REPORT.md`).
